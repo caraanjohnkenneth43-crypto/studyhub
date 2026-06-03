@@ -27,7 +27,7 @@ export default function AdminDashboard() {
     )
   }
 
-  const defaultSubject = { id: "", name: "", icon: "📘", description: "", color: "#3b82f6", quizzes: [], links: [] }
+  const defaultSubject = { id: "", name: "", icon: "📘", description: "", color: "#3b82f6", classroom: "2029", quizzes: [], links: [] }
   const defaultQuiz = { id: "", title: "", questions: [{ question: "", options: ["", "", "", ""], answer: "" }] }
   const defaultLink = { title: "", url: "", description: "" }
 
@@ -160,7 +160,7 @@ export default function AdminDashboard() {
             <span className="text-xs hidden sm:inline" style={{ color: "var(--c-subtle)" }}>{user.email}</span>
             <button onClick={logOut} className="text-xs px-2 py-1 rounded" style={{ color: "var(--c-subtle)" }}>Log out</button>
             <SettingsPanel />
-            <a href="/" className="text-xs" style={{ color: "var(--c-subtle)" }}>&larr; View Site</a>
+            <a href="/dashboard" className="text-xs" style={{ color: "var(--c-subtle)" }}>&larr; Dashboard</a>
           </div>
         </div>
       </header>
@@ -246,6 +246,10 @@ export default function AdminDashboard() {
                   <div>
                     <label className="text-xs block mb-1" style={{ color: "var(--c-muted)" }}>Subject ID (used in URL)</label>
                     <input value={subject.id} onChange={(e) => updateSubject(activeSubject, "id", e.target.value)} className="w-full px-2 py-1.5 rounded-lg text-sm border font-mono" style={{ background: "var(--c-bg)", borderColor: "var(--c-border)", color: "var(--c-fg)" }} />
+                  </div>
+                  <div>
+                    <label className="text-xs block mb-1" style={{ color: "var(--c-muted)" }}>Classroom</label>
+                    <input value={subject.classroom || "2029"} onChange={(e) => updateSubject(activeSubject, "classroom", e.target.value)} className="w-full px-2 py-1.5 rounded-lg text-sm border" style={{ background: "var(--c-bg)", borderColor: "var(--c-border)", color: "var(--c-fg)" }} />
                   </div>
                 </div>
               </div>

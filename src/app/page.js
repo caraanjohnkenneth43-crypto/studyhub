@@ -1,65 +1,59 @@
+"use client"
+
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { useAuth } from "./AuthProvider"
 import SettingsPanel from "./SettingsPanel"
-import AuthNav from "./AuthNav"
 
-export const dynamic = "force-dynamic"
+export default function LandingPage() {
+  const { user, loading } = useAuth()
+  const router = useRouter()
 
-async function getData() {
-  try {
-    const base = process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : "http://localhost:3000"
-    const res = await fetch(`${base}/api/data`, { cache: "no-store" })
-    return await res.json()
-  } catch {
-    return { subjects: [] }
-  }
-}
-
-export default async function Home() {
-  const data = await getData()
-  const { subjects } = data
+  useEffect(() => {
+    if (!loading && user) {
+      router.push("/dashboard")
+    }
+  }, [user, loading, router])
 
   return (
-    <div className="min-h-screen" style={{ background: "var(--c-bg)" }}>
-      <header style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }} className="border-b">
-        <div className="max-w-5xl mx-auto px-4 py-6 flex items-center justify-between header-content">
-          <div>
-            <h1 className="text-2xl font-bold" style={{ color: "var(--c-fg)" }}>StudyHub</h1>
-            <p className="text-sm mt-0.5" style={{ color: "var(--c-subtle)" }}>All your study materials in one place</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <SettingsPanel />
-            <AuthNav />
-          </div>
-        </div>
+    <div className="min-h-screen flex flex-col" style={{ background: "var(--c-bg)" }}>
+      <header className="flex justify-end p-4">
+        <SettingsPanel />
       </header>
-
-      <main className="max-w-5xl mx-auto px-4 py-8">
-        {subjects.length === 0 && (
-          <div className="text-center py-20" style={{ color: "var(--c-subtle)" }}>
-            <p className="text-lg">No subjects yet.</p>
-            <p className="text-sm mt-1">Check back later or ask your admin to add them.</p>
-          </div>
-        )}
-
-        <div className="grid gap-4 subject-grid sm:grid-cols-2 lg:grid-cols-3">
-          {subjects.map((subject) => (
-            <Link
-              key={subject.id}
-              href={`/subjects/${subject.id}`}
-              className="subject-card block rounded-xl border p-5"
-              style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }}
-            >
-              <div className="text-3xl mb-3">{subject.icon}</div>
-              <h2 className="text-lg font-semibold" style={{ color: "var(--c-fg)" }}>{subject.name}</h2>
-              <p className="text-sm mt-1" style={{ color: "var(--c-muted)" }}>{subject.description}</p>
-              <div className="flex gap-3 mt-3 text-xs" style={{ color: "var(--c-subtle)" }}>
-                <span>{subject.quizzes.length} quiz{(subject.quizzes.length !== 1) ? "zes" : ""}</span>
-                <span>{subject.links.length} link{(subject.links.length !== 1) ? "s" : ""}</span>
-              </div>
-            </Link>
-          ))}
+      <main className="flex-1 flex items-center justify-center px-4 py-12">
+        <div className="text-center max-w-lg">
+          <div className="text-6xl mb-6">📚</div>
+          <h1 className="text-4xl font-bold mb-3" style={{ color: "var(--c-fg)" }}>StudyHub</h1>
+          <p className="text-lg mb-8 leading-relaxed" style={{ color: "var(--c-muted)" }}>
+            A hub of information and study materials where you don&apos;t have to access your Chromebook to get to them.
+          </p>
+          {loading ? (
+            <p className="text-sm" style={{ color: "var(--c-subtle)" }}>Loading...</p>
+          ) : user ? (
+            <p className="text-sm" style={{ color: "var(--c-subtle)" }}>Redirecting to dashboard...</p>
+          ) : (
+            <div className="flex gap-4 justify-center">
+              <Link
+                href="/login"
+                className="px-6 py-3 rounded-lg text-white font-medium transition-colors"
+                style={{ background: "#2563eb" }}
+              >
+                Log In
+              </Link>
+              <Link
+                href="/signup"
+                className="px-6 py-3 rounded-lg font-medium transition-colors border"
+                style={{
+                  color: "var(--c-fg)",
+                  borderColor: "var(--c-border)",
+                  background: "var(--c-card)",
+                }}
+              >
+                Sign Up
+              </Link>
+            </div>
+          )}
         </div>
       </main>
     </div>

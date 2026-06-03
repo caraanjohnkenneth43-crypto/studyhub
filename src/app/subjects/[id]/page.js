@@ -42,7 +42,7 @@ export default function SubjectPage() {
     <div className="min-h-screen" style={{ background: "var(--c-bg)" }}>
       <header style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }} className="border-b">
         <div className="max-w-3xl mx-auto px-4 py-4 flex items-center gap-3 header-content">
-          <Link href="/" style={{ color: "var(--c-subtle)" }} className="hover:underline text-sm">&larr; Back</Link>
+          <Link href="/dashboard" style={{ color: "var(--c-subtle)" }} className="hover:underline text-sm">&larr; Back</Link>
           <span className="text-2xl">{data.icon}</span>
           <div className="flex-1">
             <h1 className="text-xl font-bold" style={{ color: "var(--c-fg)" }}>{data.name}</h1>
