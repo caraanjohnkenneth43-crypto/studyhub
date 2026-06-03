@@ -1,4 +1,5 @@
 import "./globals.css";
+import FeedbackWidget from "./FeedbackWidget"
 
 export const metadata = {
   title: "StudyHub",
@@ -33,7 +34,10 @@ export default function RootLayout({ children }) {
           }}
         />
       </head>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        <FeedbackWidget />
+      </body>
     </html>
   );
 }

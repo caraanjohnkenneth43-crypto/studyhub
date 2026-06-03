@@ -8,6 +8,8 @@ export default function AdminDashboard() {
   const [activeSubject, setActiveSubject] = useState(null)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState("")
+  const [viewFeedback, setViewFeedback] = useState(false)
+  const [feedback, setFeedback] = useState([])
 
   const defaultSubject = { id: "", name: "", icon: "📘", description: "", color: "#3b82f6", quizzes: [], links: [] }
   const defaultQuiz = { id: "", title: "", questions: [{ question: "", options: ["", "", "", ""], answer: "" }] }
@@ -157,11 +159,11 @@ export default function AdminDashboard() {
               {data.subjects.map((s, i) => (
                 <div
                   key={i}
-                  onClick={() => setActiveSubject(i)}
+                  onClick={() => { setActiveSubject(i); setViewFeedback(false) }}
                   className="flex items-center justify-between px-2 py-1.5 rounded-lg text-sm cursor-pointer transition-colors"
                   style={{
-                    background: activeSubject === i ? "#dbeafe" : "transparent",
-                    color: activeSubject === i ? "#1d40ed" : "var(--c-fg)",
+                    background: activeSubject === i && !viewFeedback ? "#dbeafe" : "transparent",
+                    color: activeSubject === i && !viewFeedback ? "#1d40ed" : "var(--c-fg)",
                   }}
                 >
                   <span>{s.icon} {s.name || "New Subject"}</span>
@@ -170,10 +172,39 @@ export default function AdminDashboard() {
               ))}
             </div>
           </div>
+
+          <button
+            onClick={() => { setViewFeedback(!viewFeedback); setActiveSubject(null); if (!viewFeedback) fetch("/api/feedback").then(r => r.json()).then(setFeedback) }}
+            className="w-full mt-2 text-left px-3 py-2 rounded-lg text-sm transition-colors"
+            style={{
+              background: viewFeedback ? "#dbeafe" : "var(--c-card)",
+              borderColor: "var(--c-border)",
+              color: viewFeedback ? "#1d40ed" : "var(--c-fg)",
+            }}
+          >
+            💬 Feedback ({feedback.length || "..."})
+          </button>
         </aside>
 
         <main className="flex-1">
-          {!subject ? (
+          {viewFeedback ? (
+            <div style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }} className="rounded-xl border p-5">
+              <h2 className="text-sm font-semibold mb-3" style={{ color: "var(--c-fg)" }}>💬 Feedback</h2>
+              <button onClick={() => fetch("/api/feedback").then(r => r.json()).then(setFeedback)} className="text-xs mb-3" style={{ color: "#2563eb" }}>↻ Refresh</button>
+              {feedback.length === 0 && <p className="text-xs" style={{ color: "var(--c-subtle)" }}>No feedback yet.</p>}
+              <div className="space-y-2 max-h-[70vh] overflow-y-auto">
+                {feedback.map((f) => (
+                  <div key={f.id} className="border rounded-lg p-3" style={{ borderColor: "var(--c-border)" }}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-medium" style={{ color: "var(--c-fg)" }}>{f.name}</span>
+                      <span className="text-xs" style={{ color: "var(--c-subtle)" }}>{new Date(f.timestamp).toLocaleString()}</span>
+                    </div>
+                    <p className="text-sm" style={{ color: "var(--c-muted)" }}>{f.message}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : !subject ? (
             <div className="rounded-xl border p-8 text-center" style={{ background: "var(--c-card)", borderColor: "var(--c-border)", color: "var(--c-subtle)" }}>
               <p>Select a subject from the sidebar to edit.</p>
             </div>
