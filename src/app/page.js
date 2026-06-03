@@ -1,8 +1,22 @@
 import Link from "next/link"
-import data from "../../data/content.json"
 import ThemeToggle from "./ThemeToggle"
 
-export default function Home() {
+export const dynamic = "force-dynamic"
+
+async function getData() {
+  try {
+    const base = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : "http://localhost:3000"
+    const res = await fetch(`${base}/api/data`, { cache: "no-store" })
+    return await res.json()
+  } catch {
+    return { subjects: [] }
+  }
+}
+
+export default async function Home() {
+  const data = await getData()
   const { subjects } = data
 
   return (
