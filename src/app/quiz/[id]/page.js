@@ -3,6 +3,7 @@
 import { useParams } from "next/navigation"
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import ThemeToggle from "../../ThemeToggle"
 
 export default function QuizPage() {
   const params = useParams()
@@ -29,15 +30,15 @@ export default function QuizPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-slate-400">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center" style={{ color: "var(--c-subtle)" }}>Loading...</div>
     )
   }
 
   if (!quiz) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center text-slate-400">
+      <div className="min-h-screen flex flex-col items-center justify-center" style={{ color: "var(--c-subtle)" }}>
         <p className="text-lg">Quiz not found.</p>
-        <Link href="/" className="text-sm text-blue-500 hover:underline mt-2">Go home</Link>
+        <Link href="/" className="text-sm underline mt-2" style={{ color: "#3b82f6" }}>Go home</Link>
       </div>
     )
   }
@@ -65,44 +66,48 @@ export default function QuizPage() {
   if (finished) {
     const percent = Math.round((score / total) * 100)
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="bg-white rounded-xl border border-slate-200 p-8 text-center max-w-sm">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--c-bg)" }}>
+        <div className="rounded-xl border p-8 text-center max-w-sm" style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }}>
           <div className="text-4xl mb-3">{percent >= 70 ? "🎉" : "📚"}</div>
-          <h1 className="text-xl font-bold text-slate-900">Quiz Complete!</h1>
-          <p className="text-3xl font-bold text-blue-600 my-3">{score}/{total}</p>
-          <p className="text-sm text-slate-500">{percent >= 70 ? "Great job!" : "Keep practicing!"}</p>
-          <Link href="/" className="inline-block mt-4 text-sm text-blue-500 hover:underline">Back to home</Link>
+          <h1 className="text-xl font-bold" style={{ color: "var(--c-fg)" }}>Quiz Complete!</h1>
+          <p className="text-3xl font-bold mt-3 mb-3" style={{ color: "#2563eb" }}>{score}/{total}</p>
+          <p className="text-sm" style={{ color: "var(--c-muted)" }}>{percent >= 70 ? "Great job!" : "Keep practicing!"}</p>
+          <Link href="/" className="inline-block mt-4 text-sm underline" style={{ color: "#3b82f6" }}>Back to home</Link>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen py-8">
+    <div className="min-h-screen py-8" style={{ background: "var(--c-bg)" }}>
       <div className="max-w-xl mx-auto px-4">
         <div className="mb-4 flex items-center justify-between">
-          <Link href="/" className="text-sm text-slate-400 hover:text-slate-600">&larr; Back</Link>
-          <span className="text-xs text-slate-400">Question {currentQ + 1} of {total}</span>
+          <Link href="/" className="text-sm" style={{ color: "var(--c-subtle)" }}>&larr; Back</Link>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <span className="text-xs" style={{ color: "var(--c-subtle)" }}>Question {currentQ + 1} of {total}</span>
+          </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 p-6">
-          <h2 className="text-lg font-semibold text-slate-900 mb-4">{question.question}</h2>
+        <div className="rounded-xl border p-6" style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }}>
+          <h2 className="text-lg font-semibold mb-4" style={{ color: "var(--c-fg)" }}>{question.question}</h2>
 
           <div className="space-y-2">
             {question.options.map((option, i) => {
-              let style = "border-slate-200 hover:border-slate-300"
+              let style = { background: "var(--c-card)", borderColor: "var(--c-border)", color: "var(--c-fg)" }
               if (showResult) {
-                if (option === question.answer) style = "border-green-400 bg-green-50 text-green-800"
-                else if (option === selected && option !== question.answer) style = "border-red-400 bg-red-50 text-red-800"
-                else style = "border-slate-100 text-slate-300"
+                if (option === question.answer) style = { background: "#052e16", borderColor: "#22c55e", color: "#bbf7d0" }
+                else if (option === selected && option !== question.answer) style = { background: "#450a0a", borderColor: "#ef4444", color: "#fecaca" }
+                else style = { background: "transparent", borderColor: "var(--c-border)", color: "var(--c-subtle)" }
               } else if (selected === option) {
-                style = "border-blue-400 bg-blue-50"
+                style = { background: "#1e3a5f", borderColor: "#3b82f6", color: "var(--c-fg)" }
               }
               return (
                 <button
                   key={i}
                   onClick={() => handleAnswer(option)}
-                  className={`w-full text-left px-4 py-3 rounded-lg border text-sm transition-colors ${style}`}
+                  className="w-full text-left px-4 py-3 rounded-lg border text-sm transition-colors"
+                  style={style}
                 >
                   {option}
                 </button>
@@ -113,7 +118,8 @@ export default function QuizPage() {
           {showResult && (
             <button
               onClick={nextQuestion}
-              className="mt-4 w-full py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+              className="mt-4 w-full py-2 rounded-lg text-sm font-medium transition-colors text-white"
+              style={{ background: "#2563eb" }}
             >
               {currentQ + 1 < total ? "Next Question" : "See Results"}
             </button>
@@ -124,7 +130,8 @@ export default function QuizPage() {
           {quiz.questions.map((_, i) => (
             <div
               key={i}
-              className={`w-2 h-2 rounded-full ${i === currentQ ? "bg-blue-500" : "bg-slate-300"}`}
+              className="w-2 h-2 rounded-full"
+              style={{ background: i === currentQ ? "#3b82f6" : "var(--c-border)" }}
             />
           ))}
         </div>

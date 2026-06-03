@@ -1,12 +1,12 @@
 'use client'
 
-import { useParams, useRouter } from "next/navigation"
+import { useParams } from "next/navigation"
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import ThemeToggle from "../../ThemeToggle"
 
 export default function SubjectPage() {
   const params = useParams()
-  const router = useRouter()
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
 
@@ -23,7 +23,7 @@ export default function SubjectPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-slate-400">
+      <div className="min-h-screen flex items-center justify-center" style={{ color: "var(--c-subtle)" }}>
         Loading...
       </div>
     )
@@ -31,51 +31,53 @@ export default function SubjectPage() {
 
   if (!data) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center text-slate-400">
+      <div className="min-h-screen flex flex-col items-center justify-center" style={{ color: "var(--c-subtle)" }}>
         <p className="text-lg">Subject not found.</p>
-        <Link href="/" className="text-sm text-blue-500 hover:underline mt-2">Go home</Link>
+        <Link href="/" className="text-sm underline mt-2" style={{ color: "#3b82f6" }}>Go home</Link>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen">
-      <header className="bg-white border-b border-slate-200">
+    <div className="min-h-screen" style={{ background: "var(--c-bg)" }}>
+      <header style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }} className="border-b">
         <div className="max-w-3xl mx-auto px-4 py-4 flex items-center gap-3">
-          <Link href="/" className="text-slate-400 hover:text-slate-600 text-sm">&larr; Back</Link>
+          <Link href="/" style={{ color: "var(--c-subtle)" }} className="hover:underline text-sm">&larr; Back</Link>
           <span className="text-2xl">{data.icon}</span>
-          <div>
-            <h1 className="text-xl font-bold text-slate-900">{data.name}</h1>
-            <p className="text-sm text-slate-500">{data.description}</p>
+          <div className="flex-1">
+            <h1 className="text-xl font-bold" style={{ color: "var(--c-fg)" }}>{data.name}</h1>
+            <p className="text-sm" style={{ color: "var(--c-muted)" }}>{data.description}</p>
           </div>
+          <ThemeToggle />
         </div>
       </header>
 
       <main className="max-w-3xl mx-auto px-4 py-6 space-y-8">
 
         <section>
-          <h2 className="text-lg font-semibold text-slate-800 mb-3">Quizzes</h2>
+          <h2 className="text-lg font-semibold mb-3" style={{ color: "var(--c-fg)" }}>Quizzes</h2>
           {data.quizzes.length === 0 && (
-            <p className="text-sm text-slate-400">No quizzes yet.</p>
+            <p className="text-sm" style={{ color: "var(--c-subtle)" }}>No quizzes yet.</p>
           )}
           <div className="space-y-2">
             {data.quizzes.map((quiz) => (
               <Link
                 key={quiz.id}
                 href={`/quiz/${quiz.id}`}
-                className="block bg-white rounded-lg border border-slate-200 p-4 subject-card"
+                className="block rounded-lg border p-4 subject-card"
+                style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }}
               >
-                <h3 className="font-medium text-slate-900">{quiz.title}</h3>
-                <p className="text-xs text-slate-400 mt-1">{quiz.questions.length} question{(quiz.questions.length !== 1) ? "s" : ""}</p>
+                <h3 className="font-medium" style={{ color: "var(--c-fg)" }}>{quiz.title}</h3>
+                <p className="text-xs mt-1" style={{ color: "var(--c-subtle)" }}>{quiz.questions.length} question{(quiz.questions.length !== 1) ? "s" : ""}</p>
               </Link>
             ))}
           </div>
         </section>
 
         <section>
-          <h2 className="text-lg font-semibold text-slate-800 mb-3">Resources & Links</h2>
+          <h2 className="text-lg font-semibold mb-3" style={{ color: "var(--c-fg)" }}>Resources & Links</h2>
           {data.links.length === 0 && (
-            <p className="text-sm text-slate-400">No links yet.</p>
+            <p className="text-sm" style={{ color: "var(--c-subtle)" }}>No links yet.</p>
           )}
           <div className="space-y-2">
             {data.links.map((link, i) => (
@@ -84,10 +86,11 @@ export default function SubjectPage() {
                 href={link.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block bg-white rounded-lg border border-slate-200 p-4 subject-card"
+                className="block rounded-lg border p-4 subject-card"
+                style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }}
               >
-                <h3 className="font-medium text-blue-600 hover:underline">{link.title}</h3>
-                <p className="text-xs text-slate-400 mt-1">{link.description}</p>
+                <h3 className="font-medium underline" style={{ color: "#3b82f6" }}>{link.title}</h3>
+                <p className="text-xs mt-1" style={{ color: "var(--c-subtle)" }}>{link.description}</p>
               </a>
             ))}
           </div>
