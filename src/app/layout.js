@@ -1,5 +1,6 @@
 import "./globals.css";
 import FeedbackWidget from "./FeedbackWidget"
+import { AuthProvider } from "./AuthProvider"
 
 export const metadata = {
   title: "StudyHub",
@@ -35,7 +36,9 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body className="min-h-full flex flex-col">
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
         <FeedbackWidget />
       </body>
     </html>

@@ -1,5 +1,6 @@
 import Link from "next/link"
 import SettingsPanel from "./SettingsPanel"
+import AuthNav from "./AuthNav"
 
 export const dynamic = "force-dynamic"
 
@@ -29,13 +30,7 @@ export default async function Home() {
           </div>
           <div className="flex items-center gap-2">
             <SettingsPanel />
-            <Link
-              href="/admin"
-              className="text-xs transition-colors px-2 py-1 rounded"
-              style={{ color: "var(--c-subtle)" }}
-            >
-              Admin
-            </Link>
+            <AuthNav />
           </div>
         </div>
       </header>

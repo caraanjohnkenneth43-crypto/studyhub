@@ -1,15 +1,31 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import SettingsPanel from "../../SettingsPanel"
+import { useAuth } from "../../AuthProvider"
 
 export default function AdminDashboard() {
+  const { user, loading, logOut } = useAuth()
+  const router = useRouter()
   const [data, setData] = useState(null)
   const [activeSubject, setActiveSubject] = useState(null)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState("")
   const [viewFeedback, setViewFeedback] = useState(false)
   const [feedback, setFeedback] = useState([])
+
+  useEffect(() => {
+    if (!loading && !user) router.push("/login")
+  }, [user, loading, router])
+
+  if (loading || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--c-bg)", color: "var(--c-subtle)" }}>
+        Loading...
+      </div>
+    )
+  }
 
   const defaultSubject = { id: "", name: "", icon: "📘", description: "", color: "#3b82f6", quizzes: [], links: [] }
   const defaultQuiz = { id: "", title: "", questions: [{ question: "", options: ["", "", "", ""], answer: "" }] }
@@ -141,6 +157,8 @@ export default function AdminDashboard() {
             <button onClick={() => save()} disabled={saving} className="px-4 py-1.5 text-white rounded-lg text-sm font-medium disabled:opacity-50 transition-colors" style={{ background: "#2563eb" }}>
               {saving ? "Saving..." : "Save Changes"}
             </button>
+            <span className="text-xs hidden sm:inline" style={{ color: "var(--c-subtle)" }}>{user.email}</span>
+            <button onClick={logOut} className="text-xs px-2 py-1 rounded" style={{ color: "var(--c-subtle)" }}>Log out</button>
             <SettingsPanel />
             <a href="/" className="text-xs" style={{ color: "var(--c-subtle)" }}>&larr; View Site</a>
           </div>
