@@ -1,0 +1,107 @@
+{
+  "subjects": [
+    {
+      "id": "biology",
+      "name": "Biology",
+      "icon": "🧬",
+      "description": "Study of living organisms, cells, genetics, and ecosystems",
+      "color": "#22c55e",
+      "quizzes": [
+        {
+          "id": "bio-cells",
+          "title": "Cell Structure & Function",
+          "questions": [
+            {
+              "question": "What organelle is known as the powerhouse of the cell?",
+              "options": [
+                "Nucleus",
+                "Mitochondria",
+                "Ribosome",
+                "Endoplasmic Reticulum"
+              ],
+              "answer": "Mitochondria"
+            },
+            {
+              "question": "Which process do plants use to convert sunlight into energy?",
+              "options": [
+                "Respiration",
+                "Photosynthesis",
+                "Fermentation",
+                "Digestion"
+              ],
+              "answer": "Photosynthesis"
+            },
+            {
+              "question": "What is the basic unit of life?",
+              "options": [
+                "Atom",
+                "Molecule",
+                "Cell",
+                "Tissue"
+              ],
+              "answer": "Cell"
+            }
+          ]
+        }
+      ],
+      "links": [
+        {
+          "title": "Khan Academy - Biology",
+          "url": "https://www.khanacademy.org/science/biology",
+          "description": "Free video lessons and practice exercises"
+        },
+        {
+          "title": "Quizlet - Biology Flashcards",
+          "url": "https://quizlet.com/subject/biology/",
+          "description": "User-made flashcard sets for biology"
+        }
+      ]
+    },
+    {
+      "id": "new-1780448604524",
+      "name": "About Kenneth",
+      "icon": "📘",
+      "description": "js stuff about me",
+      "color": "#3b82f6",
+      "quizzes": [
+        {
+          "id": "q-1780448890043",
+          "title": "kenneth stuff",
+          "questions": [
+            {
+              "question": "how old is kenneth",
+              "options": [
+                "15",
+                "2 (bro what)",
+                "13",
+                "64"
+              ],
+              "answer": "15"
+            },
+            {
+              "question": "is kenneth smart",
+              "options": [
+                "maybe",
+                "maybe",
+                "maybe",
+                "67"
+              ],
+              "answer": "67"
+            },
+            {
+              "question": "are u smart",
+              "options": [
+                "yes",
+                "yes",
+                "yes",
+                "it is subjective kind of smart"
+              ],
+              "answer": "it is subjective kind of smart"
+            }
+          ]
+        }
+      ],
+      "links": []
+    }
+  ]
+}
