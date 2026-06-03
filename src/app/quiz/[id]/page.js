@@ -3,7 +3,7 @@
 import { useParams } from "next/navigation"
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import ThemeToggle from "../../ThemeToggle"
+import SettingsPanel from "../../SettingsPanel"
 
 export default function QuizPage() {
   const params = useParams()
@@ -30,13 +30,13 @@ export default function QuizPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ color: "var(--c-subtle)" }}>Loading...</div>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--c-bg)", color: "var(--c-subtle)" }}>Loading...</div>
     )
   }
 
   if (!quiz) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center" style={{ color: "var(--c-subtle)" }}>
+      <div className="min-h-screen flex flex-col items-center justify-center" style={{ background: "var(--c-bg)", color: "var(--c-subtle)" }}>
         <p className="text-lg">Quiz not found.</p>
         <Link href="/" className="text-sm underline mt-2" style={{ color: "#3b82f6" }}>Go home</Link>
       </div>
@@ -81,11 +81,11 @@ export default function QuizPage() {
   return (
     <div className="min-h-screen py-8" style={{ background: "var(--c-bg)" }}>
       <div className="max-w-xl mx-auto px-4">
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-4 flex items-center justify-between header-content">
           <Link href="/" className="text-sm" style={{ color: "var(--c-subtle)" }}>&larr; Back</Link>
-          <div className="flex items-center gap-3">
-            <ThemeToggle />
-            <span className="text-xs" style={{ color: "var(--c-subtle)" }}>Question {currentQ + 1} of {total}</span>
+          <div className="flex items-center gap-2">
+            <SettingsPanel />
+            <span className="text-xs" style={{ color: "var(--c-subtle)" }}>Q{currentQ + 1}/{total}</span>
           </div>
         </div>
 
@@ -94,20 +94,20 @@ export default function QuizPage() {
 
           <div className="space-y-2">
             {question.options.map((option, i) => {
-              let style = { background: "var(--c-card)", borderColor: "var(--c-border)", color: "var(--c-fg)" }
+              let btnStyle = { background: "var(--c-card)", borderColor: "var(--c-border)", color: "var(--c-fg)" }
               if (showResult) {
-                if (option === question.answer) style = { background: "#052e16", borderColor: "#22c55e", color: "#bbf7d0" }
-                else if (option === selected && option !== question.answer) style = { background: "#450a0a", borderColor: "#ef4444", color: "#fecaca" }
-                else style = { background: "transparent", borderColor: "var(--c-border)", color: "var(--c-subtle)" }
+                if (option === question.answer) btnStyle = { background: "#052e16", borderColor: "#22c55e", color: "#bbf7d0" }
+                else if (option === selected && option !== question.answer) btnStyle = { background: "#450a0a", borderColor: "#ef4444", color: "#fecaca" }
+                else btnStyle = { background: "transparent", borderColor: "var(--c-border)", color: "var(--c-subtle)" }
               } else if (selected === option) {
-                style = { background: "#1e3a5f", borderColor: "#3b82f6", color: "var(--c-fg)" }
+                btnStyle = { background: "#1e3a5f", borderColor: "#3b82f6", color: "var(--c-fg)" }
               }
               return (
                 <button
                   key={i}
                   onClick={() => handleAnswer(option)}
                   className="w-full text-left px-4 py-3 rounded-lg border text-sm transition-colors"
-                  style={style}
+                  style={btnStyle}
                 >
                   {option}
                 </button>
@@ -128,11 +128,7 @@ export default function QuizPage() {
 
         <div className="mt-3 flex justify-center gap-1">
           {quiz.questions.map((_, i) => (
-            <div
-              key={i}
-              className="w-2 h-2 rounded-full"
-              style={{ background: i === currentQ ? "#3b82f6" : "var(--c-border)" }}
-            />
+            <div key={i} className="w-2 h-2 rounded-full" style={{ background: i === currentQ ? "#3b82f6" : "var(--c-border)" }} />
           ))}
         </div>
       </div>

@@ -12,7 +12,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className="h-full antialiased">
+    <html lang="en" className="h-full antialiased density-comfortable">
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -20,9 +20,11 @@ export default function RootLayout({ children }) {
           dangerouslySetInnerHTML={{
             __html: `
               try {
-                if (localStorage.getItem("theme") === "dark") {
-                  document.documentElement.classList.add("dark");
-                }
+                var s = JSON.parse(localStorage.getItem("studyhub-settings") || "{}");
+                if (s.dark) document.documentElement.classList.add("dark");
+                if (s.fontSize === "small") document.documentElement.style.fontSize = "14px";
+                else if (s.fontSize === "large") document.documentElement.style.fontSize = "18px";
+                if (s.density) document.documentElement.classList.add("density-" + s.density);
                 if ("serviceWorker" in navigator) {
                   navigator.serviceWorker.register("/sw.js");
                 }

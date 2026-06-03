@@ -3,7 +3,7 @@
 import { useParams } from "next/navigation"
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import ThemeToggle from "../../ThemeToggle"
+import SettingsPanel from "../../SettingsPanel"
 
 export default function SubjectPage() {
   const params = useParams()
@@ -23,7 +23,7 @@ export default function SubjectPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ color: "var(--c-subtle)" }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--c-bg)", color: "var(--c-subtle)" }}>
         Loading...
       </div>
     )
@@ -31,7 +31,7 @@ export default function SubjectPage() {
 
   if (!data) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center" style={{ color: "var(--c-subtle)" }}>
+      <div className="min-h-screen flex flex-col items-center justify-center" style={{ background: "var(--c-bg)", color: "var(--c-subtle)" }}>
         <p className="text-lg">Subject not found.</p>
         <Link href="/" className="text-sm underline mt-2" style={{ color: "#3b82f6" }}>Go home</Link>
       </div>
@@ -41,19 +41,18 @@ export default function SubjectPage() {
   return (
     <div className="min-h-screen" style={{ background: "var(--c-bg)" }}>
       <header style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }} className="border-b">
-        <div className="max-w-3xl mx-auto px-4 py-4 flex items-center gap-3">
+        <div className="max-w-3xl mx-auto px-4 py-4 flex items-center gap-3 header-content">
           <Link href="/" style={{ color: "var(--c-subtle)" }} className="hover:underline text-sm">&larr; Back</Link>
           <span className="text-2xl">{data.icon}</span>
           <div className="flex-1">
             <h1 className="text-xl font-bold" style={{ color: "var(--c-fg)" }}>{data.name}</h1>
             <p className="text-sm" style={{ color: "var(--c-muted)" }}>{data.description}</p>
           </div>
-          <ThemeToggle />
+          <SettingsPanel />
         </div>
       </header>
 
       <main className="max-w-3xl mx-auto px-4 py-6 space-y-8">
-
         <section>
           <h2 className="text-lg font-semibold mb-3" style={{ color: "var(--c-fg)" }}>Quizzes</h2>
           {data.quizzes.length === 0 && (
@@ -95,7 +94,6 @@ export default function SubjectPage() {
             ))}
           </div>
         </section>
-
       </main>
     </div>
   )

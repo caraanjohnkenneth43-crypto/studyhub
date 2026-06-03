@@ -1,5 +1,5 @@
 import Link from "next/link"
-import ThemeToggle from "./ThemeToggle"
+import SettingsPanel from "./SettingsPanel"
 
 export const dynamic = "force-dynamic"
 
@@ -22,16 +22,16 @@ export default async function Home() {
   return (
     <div className="min-h-screen" style={{ background: "var(--c-bg)" }}>
       <header style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }} className="border-b">
-        <div className="max-w-5xl mx-auto px-4 py-6 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-4 py-6 flex items-center justify-between header-content">
           <div>
             <h1 className="text-2xl font-bold" style={{ color: "var(--c-fg)" }}>StudyHub</h1>
             <p className="text-sm mt-0.5" style={{ color: "var(--c-subtle)" }}>All your study materials in one place</p>
           </div>
-          <div className="flex items-center gap-3">
-            <ThemeToggle />
+          <div className="flex items-center gap-2">
+            <SettingsPanel />
             <Link
               href="/admin"
-              className="text-xs transition-colors"
+              className="text-xs transition-colors px-2 py-1 rounded"
               style={{ color: "var(--c-subtle)" }}
             >
               Admin
@@ -41,7 +41,14 @@ export default async function Home() {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-8">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {subjects.length === 0 && (
+          <div className="text-center py-20" style={{ color: "var(--c-subtle)" }}>
+            <p className="text-lg">No subjects yet.</p>
+            <p className="text-sm mt-1">Check back later or ask your admin to add them.</p>
+          </div>
+        )}
+
+        <div className="grid gap-4 subject-grid sm:grid-cols-2 lg:grid-cols-3">
           {subjects.map((subject) => (
             <Link
               key={subject.id}
@@ -59,13 +66,6 @@ export default async function Home() {
             </Link>
           ))}
         </div>
-
-        {subjects.length === 0 && (
-          <div className="text-center py-20" style={{ color: "var(--c-subtle)" }}>
-            <p className="text-lg">No subjects yet.</p>
-            <p className="text-sm mt-1">Check back later or ask your admin to add them.</p>
-          </div>
-        )}
       </main>
     </div>
   )

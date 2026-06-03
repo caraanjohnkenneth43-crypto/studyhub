@@ -31,3 +31,27 @@ body {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(0,0,0,0.1);
 }
+
+.density-compact .p-responsive { padding: 0.5rem; }
+.density-comfortable .p-responsive { padding: 1rem; }
+.density-spacious .p-responsive { padding: 1.5rem; }
+
+.density-compact .gap-responsive { gap: 0.25rem; }
+.density-comfortable .gap-responsive { gap: 0.5rem; }
+.density-spacious .gap-responsive { gap: 1rem; }
+
+@media (max-width: 640px) {
+  .subject-grid {
+    grid-template-columns: 1fr !important;
+  }
+  header .header-content {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .admin-layout {
+    flex-direction: column !important;
+  }
+  .admin-sidebar {
+    width: 100% !important;
+  }
+}
