@@ -7,14 +7,14 @@ import { useAuth } from "./AuthProvider"
 import SettingsPanel from "./SettingsPanel"
 
 export default function LandingPage() {
-  const { user, loading } = useAuth()
+  const { user } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
-    if (!loading && user) {
+    if (user) {
       router.push("/dashboard")
     }
-  }, [user, loading, router])
+  }, [user, router])
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "var(--c-bg)" }}>
@@ -28,32 +28,26 @@ export default function LandingPage() {
           <p className="text-lg mb-8 leading-relaxed" style={{ color: "var(--c-muted)" }}>
             A hub of information and study materials where you don&apos;t have to access your Chromebook to get to them.
           </p>
-          {loading ? (
-            <p className="text-sm" style={{ color: "var(--c-subtle)" }}>Loading...</p>
-          ) : user ? (
-            <p className="text-sm" style={{ color: "var(--c-subtle)" }}>Redirecting to dashboard...</p>
-          ) : (
-            <div className="flex gap-4 justify-center">
-              <Link
-                href="/login"
-                className="px-6 py-3 rounded-lg text-white font-medium transition-colors"
-                style={{ background: "#2563eb" }}
-              >
-                Log In
-              </Link>
-              <Link
-                href="/signup"
-                className="px-6 py-3 rounded-lg font-medium transition-colors border"
-                style={{
-                  color: "var(--c-fg)",
-                  borderColor: "var(--c-border)",
-                  background: "var(--c-card)",
-                }}
-              >
-                Sign Up
-              </Link>
-            </div>
-          )}
+          <div className="flex gap-4 justify-center">
+            <Link
+              href="/login"
+              className="px-6 py-3 rounded-lg text-white font-medium transition-colors"
+              style={{ background: "#2563eb" }}
+            >
+              Log In
+            </Link>
+            <Link
+              href="/signup"
+              className="px-6 py-3 rounded-lg font-medium transition-colors border"
+              style={{
+                color: "var(--c-fg)",
+                borderColor: "var(--c-border)",
+                background: "var(--c-card)",
+              }}
+            >
+              Sign Up
+            </Link>
+          </div>
         </div>
       </main>
     </div>
