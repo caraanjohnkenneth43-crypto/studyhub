@@ -4,9 +4,12 @@ import { collection, addDoc, getDocs, query, orderBy } from "firebase/firestore"
 export async function POST(request) {
   try {
     const { name, message } = await request.json()
+    if (!message || typeof message !== "string" || !message.trim()) {
+      return Response.json({ success: false, error: "Message is required" }, { status: 400 })
+    }
     const doc = await addDoc(collection(db, "feedback"), {
-      name: name || "Anonymous",
-      message,
+      name: typeof name === "string" && name.trim() ? name.trim() : "Anonymous",
+      message: message.trim(),
       timestamp: new Date().toISOString(),
     })
     return Response.json({ success: true, id: doc.id })

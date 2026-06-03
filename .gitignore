@@ -1,5 +1,7 @@
 node_modules/
 .next/
+out/
+build/
 *.local
 .env*.local
-node_modules/
+next-env.d.ts

@@ -27,8 +27,8 @@ src/
     page.js              ← Landing page (hero + Login/Signup, redirects if logged in)
     AuthProvider.js      ← Firebase Auth context (user, loading, signUp, logIn, logOut)
     SettingsPanel.js     ← Gear icon: dark mode, font size, density
-    login/page.js        ← Email/password login
-    signup/page.js       ← Email/password signup with confirm
+    login/page.js        ← Email/password login → redirects to /dashboard
+    signup/page.js       ← Email/password signup → redirects to /dashboard
     dashboard/page.js    ← Main app after login: classroom sidebar + subject grid
     subjects/[id]/page.js ← Subject detail (quizzes + links)
     quiz/[id]/page.js    ← Quiz taker (instant feedback, scoring, progress dots)
@@ -36,8 +36,17 @@ src/
       page.js            ← Auth gate → redirects to /dashboard or /login
       dashboard/page.js  ← CRUD editor for subjects, quizzes, links + feedback viewer
     api/
-      data/route.js      ← GET/PUT app/data on Firestore
-      feedback/route.js  ← POST/GET feedback collection
+      data/route.js      ← GET/PUT app/data on Firestore (validates subjects is array)
+      feedback/route.js  ← POST/GET feedback collection (validates message required)
+```
+
+## Navigation Flow
+```
+/ (landing page) ──logged in──→ /dashboard
+                ──not logged in──→ login → /dashboard
+/dashboard → subject card → /subjects/[id] → quiz link → /quiz/[id]
+/dashboard → "Admin" link → /admin/dashboard
+/admin (auth gate) → /dashboard (logged in) or /login (not logged in)
 ```
 
 ## Key Conventions
@@ -45,8 +54,8 @@ src/
 - **CSS theming:** Always use `var(--c-*)` — never hardcode colors. Dark mode = `.dark` on `<html>`.
 - **Mobile:** Single-column grids below 640px. Admin sidebar stacks. Use `subject-grid` and `admin-layout` CSS classes.
 - **State:** Settings saved to `localStorage("studyhub-settings")`. Classrooms saved to `localStorage("studyhub-classrooms")`.
-- **Firebase:** Single-doc pattern for app data. GET returns doc, PUT overwrites whole doc.
-- **Feedback:** `name` (optional) + `message` + `timestamp` per document in `feedback` collection.
+- **Firebase:** Single-doc pattern for app data. GET returns doc, PUT overwrites whole doc (validates body first).
+- **Feedback:** `name` (optional) + `message` (required) + `timestamp` per document in `feedback` collection.
 
 ## Firebase Schema
 ```
@@ -62,10 +71,17 @@ feedback/{id} → { name, message, timestamp }
 ## Common Commands
 - `npm run dev` — start dev server on localhost:3000
 - `npm run build` — production build
+- `npm run lint` — run ESLint
 - `git add -A && git commit -m "..." && git push` — deploy
 
-## Known Decisions
-- Hardcoded admin password replaced with Firebase Auth (any logged-in user = admin for now)
+## Known Decisions & Gotchas
+- Hardcoded admin password replaced with Firebase Auth (any logged-in user = admin for now — no role system yet)
+- After login/signup, redirects to `/dashboard` (not `/admin/dashboard`)
+- "Back" links on subject/quiz pages go to `/dashboard`, not `/`
+- Quiz results "Back to dashboard" goes to `/dashboard`
 - Classrooms stored in localStorage, not yet persisted to backend
 - Feedback stored in Firestore (separate collection), not filesystem
 - Dark mode via CSS custom properties + class toggle, not Tailwind dark:
+- `app/data` is a single Firestore document (1MB max, 20k fields max — fine for school project)
+- No offline caching implemented (sw.js only registers install/activate)
+- No Firestore security rules (test mode — acceptable for school project)

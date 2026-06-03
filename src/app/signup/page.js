@@ -29,7 +29,7 @@ export default function SignupPage() {
     setLoading(true)
     try {
       await signUp(email, password)
-      router.push("/admin/dashboard")
+      router.push("/dashboard")
     } catch (err) {
       setError(err.message.replace("Firebase: ", "").replace(/\(.*\)/, ""))
     }

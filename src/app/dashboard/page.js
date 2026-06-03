@@ -20,7 +20,7 @@ export default function Dashboard() {
   }, [user, loading, router])
 
   useEffect(() => {
-    fetch("/api/data").then(r => r.json()).then(setData)
+    fetch("/api/data").then(r => r.json()).then(setData).catch(() => setData({ subjects: [] }))
   }, [])
 
   useEffect(() => {
@@ -118,7 +118,7 @@ export default function Dashboard() {
 
         <main className="flex-1 min-w-0">
           <div className="mb-6">
-            <h2 className="text-xl font-bold" style={{ color: "var(--c-fg)" }}>Class of {activeClassroom}</h2>
+            <h2 className="text-xl font-bold" style={{ color: "var(--c-fg)" }}>{classroom?.name || "Class of " + activeClassroom}</h2>
             <p className="text-sm mt-1" style={{ color: "var(--c-muted)" }}>{subjects.length} subject{(subjects.length !== 1) ? "s" : ""}</p>
           </div>
 

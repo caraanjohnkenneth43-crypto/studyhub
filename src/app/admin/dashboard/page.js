@@ -32,7 +32,7 @@ export default function AdminDashboard() {
   const defaultLink = { title: "", url: "", description: "" }
 
   useEffect(() => {
-    fetch("/api/data").then((r) => r.json()).then(setData)
+    fetch("/api/data").then((r) => r.json()).then(setData).catch(() => setData({ subjects: [] }))
   }, [])
 
   const save = async (newData) => {

@@ -33,7 +33,7 @@ export default function SubjectPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center" style={{ background: "var(--c-bg)", color: "var(--c-subtle)" }}>
         <p className="text-lg">Subject not found.</p>
-        <Link href="/" className="text-sm underline mt-2" style={{ color: "#3b82f6" }}>Go home</Link>
+        <Link href="/dashboard" className="text-sm underline mt-2" style={{ color: "#3b82f6" }}>Go to dashboard</Link>
       </div>
     )
   }

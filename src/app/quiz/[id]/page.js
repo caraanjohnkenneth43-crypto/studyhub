@@ -38,7 +38,7 @@ export default function QuizPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center" style={{ background: "var(--c-bg)", color: "var(--c-subtle)" }}>
         <p className="text-lg">Quiz not found.</p>
-        <Link href="/" className="text-sm underline mt-2" style={{ color: "#3b82f6" }}>Go home</Link>
+        <Link href="/dashboard" className="text-sm underline mt-2" style={{ color: "#3b82f6" }}>Go to dashboard</Link>
       </div>
     )
   }
@@ -72,7 +72,7 @@ export default function QuizPage() {
           <h1 className="text-xl font-bold" style={{ color: "var(--c-fg)" }}>Quiz Complete!</h1>
           <p className="text-3xl font-bold mt-3 mb-3" style={{ color: "#2563eb" }}>{score}/{total}</p>
           <p className="text-sm" style={{ color: "var(--c-muted)" }}>{percent >= 70 ? "Great job!" : "Keep practicing!"}</p>
-          <Link href="/" className="inline-block mt-4 text-sm underline" style={{ color: "#3b82f6" }}>Back to home</Link>
+          <Link href="/dashboard" className="inline-block mt-4 text-sm underline" style={{ color: "#3b82f6" }}>Back to dashboard</Link>
         </div>
       </div>
     )
@@ -82,7 +82,7 @@ export default function QuizPage() {
     <div className="min-h-screen py-8" style={{ background: "var(--c-bg)" }}>
       <div className="max-w-xl mx-auto px-4">
         <div className="mb-4 flex items-center justify-between header-content">
-          <Link href="/" className="text-sm" style={{ color: "var(--c-subtle)" }}>&larr; Back</Link>
+          <Link href="/dashboard" className="text-sm" style={{ color: "var(--c-subtle)" }}>&larr; Back</Link>
           <div className="flex items-center gap-2">
             <SettingsPanel />
             <span className="text-xs" style={{ color: "var(--c-subtle)" }}>Q{currentQ + 1}/{total}</span>

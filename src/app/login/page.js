@@ -20,7 +20,7 @@ export default function LoginPage() {
     setLoading(true)
     try {
       await logIn(email, password)
-      router.push("/admin/dashboard")
+      router.push("/dashboard")
     } catch (err) {
       setError(err.message.replace("Firebase: ", "").replace(/\(.*\)/, ""))
     }

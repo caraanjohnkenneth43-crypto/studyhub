@@ -1,10 +1,10 @@
 {
   "name": "StudyHub",
   "short_name": "StudyHub",
-  "description": "Your all-in-one study resource hub",
+  "description": "A hub of information and study materials where you don't have to access your Chromebook to get to them.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f8fafc",
+  "background_color": "#0f172a",
   "theme_color": "#2563eb",
   "orientation": "any",
   "icons": [
