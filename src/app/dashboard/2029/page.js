@@ -12,6 +12,8 @@ export default function ClassroomView() {
   const [data, setData] = useState(null)
   const [activeSubjectId, setActiveSubjectId] = useState(null)
   const [feedbackOpen, setFeedbackOpen] = useState(false)
+  const [feedbackMsg, setFeedbackMsg] = useState("")
+  const [feedbackSent, setFeedbackSent] = useState(false)
   const [requestOpen, setRequestOpen] = useState(false)
   const [requestMsg, setRequestMsg] = useState("")
   const [requestSent, setRequestSent] = useState(false)
