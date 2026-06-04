@@ -15,6 +15,9 @@ export default function ChatRoom() {
   const [room, setRoom] = useState(null)
   const [messages, setMessages] = useState([])
   const [text, setText] = useState("")
+  const [password, setPassword] = useState("")
+  const [passwordError, setPasswordError] = useState(false)
+  const [verified, setVerified] = useState(false)
   const [roomLoaded, setRoomLoaded] = useState(false)
   const bottomRef = useRef(null)
 
@@ -26,19 +29,43 @@ export default function ChatRoom() {
     const ref = doc(db, "chatRooms", id)
     getDoc(ref).then(snap => {
       if (snap.exists()) {
-        setRoom({ id: snap.id, ...snap.data() })
+        const data = { id: snap.id, ...snap.data() }
+        setRoom(data)
+        if (data.type === "public") {
+          setVerified(true)
+        } else {
+          try {
+            const stored = JSON.parse(sessionStorage.getItem("chat-passwords") || "{}")
+            if (stored[id] === data.password) setVerified(true)
+          } catch {}
+        }
       }
       setRoomLoaded(true)
     })
   }, [id])
 
   useEffect(() => {
+    if (!verified) return
     const q = query(collection(db, "chatRooms", id, "messages"), orderBy("timestamp", "asc"), limit(200))
     const unsub = onSnapshot(q, (snap) => {
       setMessages(snap.docs.map(d => ({ id: d.id, ...d.data() })))
     })
     return unsub
-  }, [id])
+  }, [id, verified])
+
+  const checkPassword = () => {
+    if (password === room.password) {
+      setVerified(true)
+      setPasswordError(false)
+      try {
+        const stored = JSON.parse(sessionStorage.getItem("chat-passwords") || "{}")
+        stored[id] = password
+        sessionStorage.setItem("chat-passwords", JSON.stringify(stored))
+      } catch {}
+    } else {
+      setPasswordError(true)
+    }
+  }
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -69,6 +96,28 @@ export default function ChatRoom() {
       <div className="min-h-screen flex flex-col items-center justify-center" style={{ background: "var(--c-bg)", color: "var(--c-subtle)" }}>
         <p className="text-lg">Room not found.</p>
         <Link href="/chat" className="text-sm underline mt-2" style={{ color: "#3b82f6" }}>Back to chat</Link>
+      </div>
+    )
+  }
+
+  if (room && room.type === "private" && !verified) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--c-bg)" }}>
+        <div className="rounded-xl border shadow-xl p-6 w-full max-w-sm mx-4" style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }}>
+          <h2 className="text-lg font-semibold mb-1" style={{ color: "var(--c-fg)" }}>🔒 Private Room</h2>
+          <p className="text-sm mb-4" style={{ color: "var(--c-muted)" }}>Enter the room password to join.</p>
+          <input
+            value={password}
+            onChange={e => { setPassword(e.target.value); setPasswordError(false) }}
+            type="password"
+            placeholder="Room password"
+            onKeyDown={e => e.key === "Enter" && checkPassword()}
+            className="w-full px-3 py-2 rounded-lg text-sm border mb-2"
+            style={{ background: "var(--c-bg)", borderColor: passwordError ? "#ef4444" : "var(--c-border)", color: "var(--c-fg)" }}
+          />
+          {passwordError && <p className="text-xs mb-2" style={{ color: "#ef4444" }}>Incorrect password.</p>}
+          <button onClick={checkPassword} disabled={!password.trim()} className="w-full py-2 text-white rounded-lg text-sm font-medium disabled:opacity-50" style={{ background: "#2563eb" }}>Join Room</button>
+        </div>
       </div>
     )
   }
