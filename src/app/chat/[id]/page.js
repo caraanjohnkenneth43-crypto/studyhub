@@ -6,7 +6,7 @@ import Link from "next/link"
 import { useAuth } from "@/app/AuthProvider"
 import SettingsPanel from "@/app/SettingsPanel"
 import { db } from "@/lib/firebase"
-import { doc, getDoc, collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, limit } from "firebase/firestore"
+import { doc, getDoc, deleteDoc, collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, limit } from "firebase/firestore"
 
 export default function ChatRoom() {
   const { id } = useParams()
@@ -19,6 +19,7 @@ export default function ChatRoom() {
   const [passwordError, setPasswordError] = useState(false)
   const [verified, setVerified] = useState(false)
   const [roomLoaded, setRoomLoaded] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const bottomRef = useRef(null)
 
   useEffect(() => {
@@ -83,6 +84,11 @@ export default function ChatRoom() {
     setText("")
   }
 
+  const deleteRoom = async () => {
+    await deleteDoc(doc(db, "chatRooms", id))
+    router.push("/chat")
+  }
+
   if (loading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--c-bg)", color: "var(--c-subtle)" }}>
@@ -133,6 +139,15 @@ export default function ChatRoom() {
           </div>
           <div className="flex items-center gap-3">
             <span className="text-xs hidden sm:inline" style={{ color: "var(--c-subtle)" }}>{user.email}</span>
+            {room && room.createdBy === user.uid && !confirmDelete && (
+              <button onClick={() => setConfirmDelete(true)} className="text-xs" style={{ color: "#ef4444" }}>Delete room</button>
+            )}
+            {room && room.createdBy === user.uid && confirmDelete && (
+              <span className="flex items-center gap-2">
+                <button onClick={deleteRoom} className="text-xs font-semibold" style={{ color: "#ef4444" }}>Confirm</button>
+                <button onClick={() => setConfirmDelete(false)} className="text-xs" style={{ color: "var(--c-subtle)" }}>Cancel</button>
+              </span>
+            )}
             <SettingsPanel />
             <button onClick={logOut} className="text-xs" style={{ color: "var(--c-subtle)" }}>Log out</button>
           </div>

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useAuth } from "@/app/AuthProvider"
-import SettingsPanel from "@/app/SettingsPanel"
+import SettingsPanel, { settingsDefaults, loadSettings, applySettings } from "@/app/SettingsPanel"
 
 export default function ClassroomView() {
   const { user, loading, logOut } = useAuth()
@@ -12,6 +12,7 @@ export default function ClassroomView() {
   const [data, setData] = useState(null)
   const [activeSubjectId, setActiveSubjectId] = useState(null)
   const [sidebarView, setSidebarView] = useState("subjects")
+  const [settings, setSettings] = useState(settingsDefaults)
   const [feedbackMsg, setFeedbackMsg] = useState("")
   const [feedbackSent, setFeedbackSent] = useState(false)
   const [requestMsg, setRequestMsg] = useState("")
@@ -25,8 +26,18 @@ export default function ClassroomView() {
   }, [user, loading, router])
 
   useEffect(() => {
+    setSettings(loadSettings())
+  }, [])
+
+  useEffect(() => {
     fetch("/api/data").then(r => r.json()).then(setData).catch(() => setData({ subjects: [] }))
   }, [])
+
+  const updateSetting = (key, value) => {
+    const next = { ...settings, [key]: value }
+    setSettings(next)
+    applySettings(next)
+  }
 
   const sendFeedback = async () => {
     if (!feedbackMsg.trim()) return
@@ -82,7 +93,7 @@ export default function ClassroomView() {
         <Link href="/chat" className="text-lg p-1.5 rounded-lg transition-colors hover:bg-black/5" title="Chat" style={{ color: "var(--c-subtle)" }}>💬</Link>
         <button onClick={() => setSidebarView(sidebarView === "request" ? "subjects" : "request")} className="text-lg p-1.5 rounded-lg transition-colors hover:bg-black/5" title="Request a feature" style={{ color: "var(--c-subtle)" }}>💡</button>
         <button onClick={() => setSidebarView(sidebarView === "feedback" ? "subjects" : "feedback")} className="text-lg p-1.5 rounded-lg transition-colors hover:bg-black/5" title="Send feedback" style={{ color: "var(--c-subtle)" }}>📬</button>
-        <SettingsPanel onOpen={() => setSidebarView("settings")} />
+        <SettingsPanel noPopup onOpen={() => setSidebarView("settings")} />
       </nav>
 
       <nav className="mobile-only fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around py-2 border-t" style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }}>
@@ -90,7 +101,7 @@ export default function ClassroomView() {
         <Link href="/chat" className="text-lg p-2" title="Chat" style={{ color: "var(--c-subtle)" }}>💬</Link>
         <button onClick={() => setSidebarView(sidebarView === "request" ? "subjects" : "request")} className="text-lg p-2" title="Request" style={{ color: "var(--c-subtle)" }}>💡</button>
         <button onClick={() => setSidebarView(sidebarView === "feedback" ? "subjects" : "feedback")} className="text-lg p-2" title="Feedback" style={{ color: "var(--c-subtle)" }}>📬</button>
-        <SettingsPanel onOpen={() => setSidebarView("settings")} />
+        <SettingsPanel noPopup onOpen={() => setSidebarView("settings")} />
       </nav>
 
       {sidebarView !== "subjects" && (
@@ -153,6 +164,35 @@ export default function ClassroomView() {
             )}
             {sidebarView === "settings" && (
               <div className="space-y-3">
+                <label className="flex items-center justify-between text-sm">
+                  <span style={{ color: "var(--c-fg)" }}>Dark Mode</span>
+                  <button onClick={() => updateSetting("dark", !settings.dark)} className="text-base">{settings.dark ? "☀️" : "🌙"}</button>
+                </label>
+                <div>
+                  <span className="text-sm block mb-1" style={{ color: "var(--c-fg)" }}>Font Size</span>
+                  <div className="flex gap-1">
+                    {["small", "medium", "large"].map(size => (
+                      <button key={size} onClick={() => updateSetting("fontSize", size)} className="flex-1 text-xs py-1 rounded border capitalize" style={{
+                        background: settings.fontSize === size ? "#2563eb" : "transparent",
+                        borderColor: settings.fontSize === size ? "#2563eb" : "var(--c-border)",
+                        color: settings.fontSize === size ? "white" : "var(--c-fg)",
+                      }}>{size}</button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-sm block mb-1" style={{ color: "var(--c-fg)" }}>Density</span>
+                  <div className="flex gap-1">
+                    {[{k:"compact",l:"Compact"},{k:"comfortable",l:"Normal"},{k:"spacious",l:"Spacious"}].map(d => (
+                      <button key={d.k} onClick={() => updateSetting("density", d.k)} className="flex-1 text-xs py-1 rounded border" style={{
+                        background: settings.density === d.k ? "#2563eb" : "transparent",
+                        borderColor: settings.density === d.k ? "#2563eb" : "var(--c-border)",
+                        color: settings.density === d.k ? "white" : "var(--c-fg)",
+                      }}>{d.l}</button>
+                    ))}
+                  </div>
+                </div>
+                <hr className="border-t" style={{ borderColor: "var(--c-border)" }} />
                 <Link href="/admin/dashboard" className="block w-full text-sm px-3 py-2 rounded-lg transition-colors hover:bg-black/5" style={{ color: "var(--c-subtle)" }} onClick={() => setSidebarView("subjects")}>Admin</Link>
                 <button onClick={() => { logOut(); setSidebarView("subjects") }} className="w-full text-left text-sm px-3 py-2 rounded-lg transition-colors hover:bg-black/5" style={{ color: "var(--c-subtle)" }}>Log out</button>
               </div>
