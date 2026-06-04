@@ -153,7 +153,7 @@ export default function ClassroomView() {
       )}
 
       <aside
-        className="w-1/4 min-w-[220px] max-w-[280px] sticky top-0 self-start border-r shrink-0 overflow-y-auto mobile-sidebar"
+        className={`w-1/4 min-w-[220px] max-w-[280px] sticky top-0 self-start border-r shrink-0 overflow-y-auto mobile-sidebar ${activeSubject ? "hidden sm:block" : ""}`}
         style={{ background: "var(--c-card)", borderColor: "var(--c-border)", height: "100vh" }}
       >
         <div className="p-4">
@@ -188,25 +188,30 @@ export default function ClassroomView() {
         </div>
       </aside>
 
-      <main className="flex-1 p-6 overflow-y-auto mobile-px" style={{ height: "100vh" }}>
-        {!activeSubject ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center" style={{ color: "var(--c-subtle)" }}>
-              <p className="text-lg">Select a subject</p>
-              <p className="text-sm mt-1">Choose a subject from the left sidebar.</p>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-6 max-w-3xl">
-            <div>
-              <div className="flex items-center gap-3 mb-1">
-                <span className="text-3xl">{activeSubject.icon}</span>
-                <div>
-                  <h2 className="text-2xl font-bold" style={{ color: "var(--c-fg)" }}>{activeSubject.name}</h2>
-                  <p className="text-sm" style={{ color: "var(--c-muted)" }}>{activeSubject.description}</p>
-                </div>
+      <main className="flex-1 p-6 overflow-y-auto mobile-px pb-16 sm:pb-6" style={{ height: "100vh" }}>
+          {!activeSubject ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center" style={{ color: "var(--c-subtle)" }}>
+                <p className="text-lg">Select a subject</p>
+                <p className="text-sm mt-1">Choose a subject from the left sidebar.</p>
               </div>
             </div>
+          ) : (
+            <div className="space-y-6 max-w-3xl">
+              <div className="sm:hidden mb-2">
+                <button onClick={() => setActiveSubjectId(null)} className="text-sm flex items-center gap-1" style={{ color: "var(--c-muted)" }}>
+                  &larr; All subjects
+                </button>
+              </div>
+              <div>
+                <div className="flex items-center gap-3 mb-1">
+                  <span className="text-3xl">{activeSubject.icon}</span>
+                  <div>
+                    <h2 className="text-2xl font-bold" style={{ color: "var(--c-fg)" }}>{activeSubject.name}</h2>
+                    <p className="text-sm" style={{ color: "var(--c-muted)" }}>{activeSubject.description}</p>
+                  </div>
+                </div>
+              </div>
 
             <section>
               <h3 className="text-lg font-semibold mb-3 flex items-center gap-2" style={{ color: "var(--c-fg)" }}>
