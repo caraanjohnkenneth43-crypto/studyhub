@@ -34,7 +34,7 @@ function apply(settings) {
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
 }
 
-export default function SettingsPanel() {
+export default function SettingsPanel({ children }) {
   const [open, setOpen] = useState(false)
   const [settings, setSettings] = useState(defaults)
   const panelRef = useRef(null)
@@ -144,6 +144,13 @@ export default function SettingsPanel() {
               </div>
             </div>
           </div>
+
+          {children && (
+            <>
+              <hr className="my-3 border-t" style={{ borderColor: "var(--c-border)" }} />
+              <div className="space-y-1">{children}</div>
+            </>
+          )}
         </div>
       )}
     </div>
