@@ -85,9 +85,9 @@ export default function ChatPage() {
         </div>
       </header>
 
-      <div className="flex-1 flex w-full">
+      <div className="flex-1 flex w-full mobile-stack">
         <aside
-          className="w-1/4 min-w-[220px] max-w-[280px] border-r shrink-0 overflow-y-auto"
+          className="w-1/4 min-w-[220px] max-w-[280px] border-r shrink-0 overflow-y-auto mobile-sidebar"
           style={{ background: "var(--c-card)", borderColor: "var(--c-border)", height: "calc(100vh - 49px)" }}
         >
           <div className="p-4">

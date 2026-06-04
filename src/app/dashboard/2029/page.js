@@ -78,7 +78,7 @@ export default function ClassroomView() {
 
   return (
     <div className="min-h-screen flex" style={{ background: "var(--c-bg)" }}>
-      <nav className="w-12 shrink-0 flex flex-col items-center gap-4 py-4 border-r" style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }}>
+      <nav className="w-12 shrink-0 flex flex-col items-center gap-4 py-4 border-r icon-bar-hide" style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }}>
         <Link href="/dashboard" className="text-lg p-1.5 rounded-lg transition-colors hover:bg-black/5" title="Classrooms" style={{ color: "var(--c-subtle)" }}>🏠</Link>
         <Link href="/chat" className="text-lg p-1.5 rounded-lg transition-colors hover:bg-black/5" title="Chat" style={{ color: "var(--c-subtle)" }}>💬</Link>
         <button onClick={() => { setRequestOpen(!requestOpen); setFeedbackOpen(false) }} className="text-lg p-1.5 rounded-lg transition-colors hover:bg-black/5" title="Request a feature" style={{ color: "var(--c-subtle)" }}>💡</button>
@@ -86,8 +86,16 @@ export default function ClassroomView() {
         <SettingsPanel />
       </nav>
 
+      <nav className="mobile-only fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around py-2 border-t" style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }}>
+        <Link href="/dashboard" className="text-lg p-2" title="Classrooms" style={{ color: "var(--c-subtle)" }}>🏠</Link>
+        <Link href="/chat" className="text-lg p-2" title="Chat" style={{ color: "var(--c-subtle)" }}>💬</Link>
+        <button onClick={() => { setRequestOpen(!requestOpen); setFeedbackOpen(false) }} className="text-lg p-2" title="Request" style={{ color: "var(--c-subtle)" }}>💡</button>
+        <button onClick={() => { setFeedbackOpen(!feedbackOpen); setRequestOpen(false) }} className="text-lg p-2" title="Feedback" style={{ color: "var(--c-subtle)" }}>📬</button>
+        <SettingsPanel />
+      </nav>
+
       {(requestOpen || feedbackOpen) && (
-        <div className="fixed left-14 top-4 z-50 w-72 rounded-xl border shadow-lg p-4" style={{ background: "var(--c-card)", borderColor: "var(--c-border)", color: "var(--c-fg)" }}>
+        <div className="fixed left-4 right-4 top-4 z-50 w-auto sm:left-14 sm:w-72 rounded-xl border shadow-lg p-4" style={{ background: "var(--c-card)", borderColor: "var(--c-border)", color: "var(--c-fg)" }}>
           {requestOpen && (
             requestSent ? (
               <div className="text-center py-4">
@@ -145,7 +153,7 @@ export default function ClassroomView() {
       )}
 
       <aside
-        className="w-1/4 min-w-[220px] max-w-[280px] sticky top-0 self-start border-r shrink-0 overflow-y-auto"
+        className="w-1/4 min-w-[220px] max-w-[280px] sticky top-0 self-start border-r shrink-0 overflow-y-auto mobile-sidebar"
         style={{ background: "var(--c-card)", borderColor: "var(--c-border)", height: "100vh" }}
       >
         <div className="p-4">
@@ -180,7 +188,7 @@ export default function ClassroomView() {
         </div>
       </aside>
 
-      <main className="flex-1 p-6 overflow-y-auto" style={{ height: "100vh" }}>
+      <main className="flex-1 p-6 overflow-y-auto mobile-px" style={{ height: "100vh" }}>
         {!activeSubject ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center" style={{ color: "var(--c-subtle)" }}>

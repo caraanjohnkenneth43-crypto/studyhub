@@ -33,8 +33,8 @@ export default function DashboardHome() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "var(--c-bg)" }}>
-      <div className="flex-1 flex w-full">
-        <div className="w-72 shrink-0 p-6 flex flex-col gap-4 h-full">
+      <div className="flex-1 flex w-full mobile-stack">
+        <div className="w-72 shrink-0 p-6 flex flex-col gap-4 h-full mobile-sidebar">
           <div className="flex items-center justify-between mb-2">
             <h1 className="text-2xl font-extrabold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
               StudyHub
@@ -58,7 +58,7 @@ export default function DashboardHome() {
           </button>
         </div>
 
-        <main className="flex-1 p-6 overflow-y-auto border-l" style={{ borderColor: "var(--c-border)", height: "calc(100vh - 49px)" }}>
+        <main className="flex-1 p-6 overflow-y-auto border-l mobile-px" style={{ borderColor: "var(--c-border)", height: "calc(100vh - 49px)" }}>
           {info.length === 0 ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center" style={{ color: "var(--c-subtle)" }}>

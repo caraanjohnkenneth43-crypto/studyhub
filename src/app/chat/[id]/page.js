@@ -139,7 +139,7 @@ export default function ChatRoom() {
         </div>
       </header>
 
-      <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full px-4" style={{ height: "calc(100vh - 49px)" }}>
+      <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full sm:px-4 px-2" style={{ height: "calc(100vh - 49px)" }}>
         <div className="flex-1 overflow-y-auto py-4 space-y-2">
           {messages.length === 0 && room && (
             <div className="text-center py-12" style={{ color: "var(--c-subtle)" }}>

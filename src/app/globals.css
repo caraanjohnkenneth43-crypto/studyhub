@@ -62,4 +62,17 @@ body {
   .admin-sidebar {
     width: 100% !important;
   }
+  .desktop-only { display: none !important; }
+  .mobile-stack { flex-direction: column !important; }
+  .mobile-sidebar { width: 100% !important; max-width: 100% !important; border-right: none !important; border-bottom: 1px solid var(--c-border) !important; }
+  .mobile-nav { display: flex !important; }
+  .icon-bar-hide { display: none !important; }
+  .mobile-px { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
+  .mobile-py { padding-top: 0.75rem !important; padding-bottom: 0.75rem !important; }
+  .admin-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap !important; }
+  .admin-tabs button { white-space: nowrap; }
+}
+
+@media (min-width: 641px) {
+  .mobile-only { display: none !important; }
 }

@@ -218,7 +218,7 @@ export default function AdminDashboard() {
         </div>
       </header>
 
-      <nav className="flex gap-1 px-6 pt-4 border-b" style={{ borderColor: "var(--c-border)" }}>
+      <nav className="flex gap-1 px-6 pt-4 border-b admin-tabs" style={{ borderColor: "var(--c-border)" }}>
         {TABS.map(t => (
           <button key={t.key} onClick={() => { setTab(t.key); setActiveSubject(null) }} className="px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors" style={{
             background: tab === t.key ? "var(--c-card)" : "transparent",
