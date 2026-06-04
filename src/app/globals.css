@@ -32,13 +32,21 @@ body {
   box-shadow: 0 8px 25px rgba(0,0,0,0.1);
 }
 
-.density-compact .p-responsive { padding: 0.5rem; }
-.density-comfortable .p-responsive { padding: 1rem; }
-.density-spacious .p-responsive { padding: 1.5rem; }
+.density-compact .card-pad { padding: 0.75rem !important; }
+.density-comfortable .card-pad { padding: 1rem !important; }
+.density-spacious .card-pad { padding: 1.5rem !important; }
 
-.density-compact .gap-responsive { gap: 0.25rem; }
-.density-comfortable .gap-responsive { gap: 0.5rem; }
-.density-spacious .gap-responsive { gap: 1rem; }
+.density-compact .gap-default { gap: 0.25rem !important; }
+.density-comfortable .gap-default { gap: 0.5rem !important; }
+.density-spacious .gap-default { gap: 1rem !important; }
+
+.density-compact .section-gap { gap: 0.75rem !important; }
+.density-comfortable .section-gap { gap: 1.5rem !important; }
+.density-spacious .section-gap { gap: 2rem !important; }
+
+.density-compact .inner-gap { gap: 0.5rem !important; }
+.density-comfortable .inner-gap { gap: 0.75rem !important; }
+.density-spacious .inner-gap { gap: 1.25rem !important; }
 
 @media (max-width: 640px) {
   .subject-grid {

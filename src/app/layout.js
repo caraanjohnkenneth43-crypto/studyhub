@@ -1,5 +1,6 @@
 import "./globals.css";
 import FeedbackWidget from "./FeedbackWidget"
+import RequestWidget from "./RequestWidget"
 import { AuthProvider } from "./AuthProvider"
 
 export const metadata = {
@@ -14,7 +15,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className="h-full antialiased density-comfortable">
+    <html lang="en" className="h-full antialiased density-comfortable" suppressHydrationWarning>
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -39,6 +40,7 @@ export default function RootLayout({ children }) {
         <AuthProvider>
           {children}
         </AuthProvider>
+        <RequestWidget />
         <FeedbackWidget />
       </body>
     </html>

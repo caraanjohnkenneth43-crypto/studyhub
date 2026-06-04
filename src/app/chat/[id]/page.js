@@ -1,0 +1,138 @@
+"use client"
+
+import { useState, useEffect, useRef } from "react"
+import { useParams, useRouter } from "next/navigation"
+import Link from "next/link"
+import { useAuth } from "@/app/AuthProvider"
+import SettingsPanel from "@/app/SettingsPanel"
+import { db } from "@/lib/firebase"
+import { doc, getDoc, collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, limit } from "firebase/firestore"
+
+export default function ChatRoom() {
+  const { id } = useParams()
+  const { user, loading, logOut } = useAuth()
+  const router = useRouter()
+  const [room, setRoom] = useState(null)
+  const [messages, setMessages] = useState([])
+  const [text, setText] = useState("")
+  const [roomLoaded, setRoomLoaded] = useState(false)
+  const bottomRef = useRef(null)
+
+  useEffect(() => {
+    if (!loading && !user) router.push("/login")
+  }, [user, loading, router])
+
+  useEffect(() => {
+    const ref = doc(db, "chatRooms", id)
+    getDoc(ref).then(snap => {
+      if (snap.exists()) {
+        setRoom({ id: snap.id, ...snap.data() })
+      }
+      setRoomLoaded(true)
+    })
+  }, [id])
+
+  useEffect(() => {
+    const q = query(collection(db, "chatRooms", id, "messages"), orderBy("timestamp", "asc"), limit(200))
+    const unsub = onSnapshot(q, (snap) => {
+      setMessages(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+    })
+    return unsub
+  }, [id])
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [messages])
+
+  const send = async (e) => {
+    e.preventDefault()
+    if (!text.trim()) return
+    await addDoc(collection(db, "chatRooms", id, "messages"), {
+      userId: user.uid,
+      userName: user.email.split("@")[0],
+      text: text.trim(),
+      timestamp: serverTimestamp(),
+    })
+    setText("")
+  }
+
+  if (loading || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--c-bg)", color: "var(--c-subtle)" }}>
+        Loading...
+      </div>
+    )
+  }
+
+  if (roomLoaded && !room) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center" style={{ background: "var(--c-bg)", color: "var(--c-subtle)" }}>
+        <p className="text-lg">Room not found.</p>
+        <Link href="/chat" className="text-sm underline mt-2" style={{ color: "#3b82f6" }}>Back to chat</Link>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col" style={{ background: "var(--c-bg)" }}>
+      <header style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }} className="border-b">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Link href="/chat" className="text-sm px-2 py-1 rounded transition-colors hover:bg-black/5" style={{ color: "var(--c-muted)" }}>&larr;</Link>
+            <span className="text-lg font-bold" style={{ color: "var(--c-fg)" }}># {room?.name || "..."}</span>
+            <Link href="/dashboard" className="text-xs px-2 py-0.5 rounded" style={{ color: "var(--c-subtle)" }}>Dashboard</Link>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-xs hidden sm:inline" style={{ color: "var(--c-subtle)" }}>{user.email}</span>
+            <SettingsPanel />
+            <button onClick={logOut} className="text-xs" style={{ color: "var(--c-subtle)" }}>Log out</button>
+          </div>
+        </div>
+      </header>
+
+      <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full px-4" style={{ height: "calc(100vh - 49px)" }}>
+        <div className="flex-1 overflow-y-auto py-4 space-y-2">
+          {messages.length === 0 && room && (
+            <div className="text-center py-12" style={{ color: "var(--c-subtle)" }}>
+              <p className="text-sm">No messages yet. Start the conversation!</p>
+            </div>
+          )}
+          {messages.map(msg => (
+            <div key={msg.id} className="flex gap-2 px-2">
+              <span className="text-xs font-medium shrink-0 mt-0.5" style={{ color: msg.userId === user.uid ? "#3b82f6" : "var(--c-fg)" }}>
+                {msg.userName || "Anonymous"}:
+              </span>
+              <span className="text-xs" style={{ color: "var(--c-muted)" }}>{msg.text}</span>
+              {msg.timestamp && (
+                <span className="text-[10px] shrink-0 ml-auto" style={{ color: "var(--c-subtle)" }}>
+                  {new Date(msg.timestamp.seconds * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                </span>
+              )}
+            </div>
+          ))}
+          <div ref={bottomRef} />
+        </div>
+
+        <form onSubmit={send} className="pb-4 pt-2">
+          <div className="flex gap-2">
+            <input
+              value={text}
+              onChange={e => setText(e.target.value)}
+              placeholder="Type a message..."
+              className="flex-1 px-3 py-2 rounded-lg text-sm border"
+              style={{ background: "var(--c-bg)", borderColor: "var(--c-border)", color: "var(--c-fg)" }}
+            />
+            <button
+              type="submit"
+              disabled={!text.trim()}
+              className="px-4 py-2 text-white rounded-lg text-sm font-medium disabled:opacity-50"
+              style={{ background: "#2563eb" }}
+            >
+              Send
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}

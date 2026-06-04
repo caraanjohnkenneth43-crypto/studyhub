@@ -1,4 +1,11 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "instructions": ["AGENTS.md"]
+  "instructions": ["AGENTS.md"],
+  "mcp": {
+    "refero": {
+      "type": "remote",
+      "url": "https://api.refero.design/mcp",
+      "enabled": true
+    }
+  }
 }
