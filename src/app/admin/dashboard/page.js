@@ -213,7 +213,7 @@ export default function AdminDashboard() {
             <span className="text-sm hidden sm:inline" style={{ color: "var(--c-subtle)" }}>{user.email}</span>
             <SettingsPanel />
             <button onClick={logOut} className="text-sm px-2 py-1 rounded" style={{ color: "var(--c-subtle)" }}>Log out</button>
-            <a href="/dashboard" className="text-sm" style={{ color: "var(--c-subtle)" }}>&larr; Dashboard</a>
+            <button onClick={() => router.back()} className="text-sm" style={{ color: "var(--c-subtle)" }}>&larr; Back</button>
           </div>
         </div>
       </header>

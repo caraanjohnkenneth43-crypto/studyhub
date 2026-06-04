@@ -34,7 +34,7 @@ function apply(settings) {
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
 }
 
-export default function SettingsPanel({ children }) {
+export default function SettingsPanel({ children, onOpen }) {
   const [open, setOpen] = useState(false)
   const [settings, setSettings] = useState(defaults)
   const panelRef = useRef(null)
@@ -68,7 +68,7 @@ export default function SettingsPanel({ children }) {
   return (
     <div className="relative" ref={panelRef}>
       <button
-        onClick={() => setOpen(!open)}
+        onClick={() => { setOpen(!open); onOpen?.() }}
         className="text-sm px-2 py-1 rounded transition-colors"
         style={{ color: "var(--c-subtle)" }}
         title="Settings"

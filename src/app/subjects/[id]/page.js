@@ -1,12 +1,13 @@
 'use client'
 
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import SettingsPanel from "../../SettingsPanel"
 
 export default function SubjectPage() {
   const params = useParams()
+  const router = useRouter()
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
 
@@ -33,7 +34,7 @@ export default function SubjectPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center" style={{ background: "var(--c-bg)", color: "var(--c-subtle)" }}>
         <p className="text-lg">Subject not found.</p>
-        <Link href="/dashboard" className="text-sm underline mt-2" style={{ color: "#3b82f6" }}>Go to dashboard</Link>
+        <button onClick={() => router.back()} className="text-sm underline mt-2" style={{ color: "#3b82f6" }}>Go back</button>
       </div>
     )
   }
@@ -42,7 +43,7 @@ export default function SubjectPage() {
     <div className="min-h-screen" style={{ background: "var(--c-bg)" }}>
       <header style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }} className="border-b">
         <div className="max-w-3xl mx-auto px-4 py-4 flex items-center gap-3 header-content">
-          <Link href="/dashboard" style={{ color: "var(--c-subtle)" }} className="hover:underline text-sm">&larr; Back</Link>
+          <button onClick={() => router.back()} style={{ color: "var(--c-subtle)" }} className="hover:underline text-sm">&larr; Back</button>
           <span className="text-2xl">{data.icon}</span>
           <div className="flex-1">
             <h1 className="text-xl font-bold" style={{ color: "var(--c-fg)" }}>{data.name}</h1>

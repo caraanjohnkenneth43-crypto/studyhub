@@ -11,10 +11,9 @@ export default function ClassroomView() {
   const router = useRouter()
   const [data, setData] = useState(null)
   const [activeSubjectId, setActiveSubjectId] = useState(null)
-  const [feedbackOpen, setFeedbackOpen] = useState(false)
+  const [sidebarView, setSidebarView] = useState("subjects")
   const [feedbackMsg, setFeedbackMsg] = useState("")
   const [feedbackSent, setFeedbackSent] = useState(false)
-  const [requestOpen, setRequestOpen] = useState(false)
   const [requestMsg, setRequestMsg] = useState("")
   const [requestSent, setRequestSent] = useState(false)
   const [requestSubject, setRequestSubject] = useState("")
@@ -81,31 +80,36 @@ export default function ClassroomView() {
       <nav className="w-12 shrink-0 flex flex-col items-center gap-4 py-4 border-r icon-bar-hide" style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }}>
         <Link href="/dashboard" className="text-lg p-1.5 rounded-lg transition-colors hover:bg-black/5" title="Classrooms" style={{ color: "var(--c-subtle)" }}>🏠</Link>
         <Link href="/chat" className="text-lg p-1.5 rounded-lg transition-colors hover:bg-black/5" title="Chat" style={{ color: "var(--c-subtle)" }}>💬</Link>
-        <button onClick={() => { setRequestOpen(!requestOpen); setFeedbackOpen(false) }} className="text-lg p-1.5 rounded-lg transition-colors hover:bg-black/5" title="Request a feature" style={{ color: "var(--c-subtle)" }}>💡</button>
-        <button onClick={() => { setFeedbackOpen(!feedbackOpen); setRequestOpen(false) }} className="text-lg p-1.5 rounded-lg transition-colors hover:bg-black/5" title="Send feedback" style={{ color: "var(--c-subtle)" }}>📬</button>
-        <SettingsPanel />
+        <button onClick={() => setSidebarView(sidebarView === "request" ? "subjects" : "request")} className="text-lg p-1.5 rounded-lg transition-colors hover:bg-black/5" title="Request a feature" style={{ color: "var(--c-subtle)" }}>💡</button>
+        <button onClick={() => setSidebarView(sidebarView === "feedback" ? "subjects" : "feedback")} className="text-lg p-1.5 rounded-lg transition-colors hover:bg-black/5" title="Send feedback" style={{ color: "var(--c-subtle)" }}>📬</button>
+        <SettingsPanel onOpen={() => setSidebarView("settings")} />
       </nav>
 
       <nav className="mobile-only fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around py-2 border-t" style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }}>
         <Link href="/dashboard" className="text-lg p-2" title="Classrooms" style={{ color: "var(--c-subtle)" }}>🏠</Link>
         <Link href="/chat" className="text-lg p-2" title="Chat" style={{ color: "var(--c-subtle)" }}>💬</Link>
-        <button onClick={() => { setRequestOpen(!requestOpen); setFeedbackOpen(false) }} className="text-lg p-2" title="Request" style={{ color: "var(--c-subtle)" }}>💡</button>
-        <button onClick={() => { setFeedbackOpen(!feedbackOpen); setRequestOpen(false) }} className="text-lg p-2" title="Feedback" style={{ color: "var(--c-subtle)" }}>📬</button>
-        <SettingsPanel />
+        <button onClick={() => setSidebarView(sidebarView === "request" ? "subjects" : "request")} className="text-lg p-2" title="Request" style={{ color: "var(--c-subtle)" }}>💡</button>
+        <button onClick={() => setSidebarView(sidebarView === "feedback" ? "subjects" : "feedback")} className="text-lg p-2" title="Feedback" style={{ color: "var(--c-subtle)" }}>📬</button>
+        <SettingsPanel onOpen={() => setSidebarView("settings")} />
       </nav>
 
-      {(requestOpen || feedbackOpen) && (
-        <div className="fixed left-4 right-4 top-4 z-50 w-auto sm:left-14 sm:w-72 rounded-xl border shadow-lg p-4" style={{ background: "var(--c-card)", borderColor: "var(--c-border)", color: "var(--c-fg)" }}>
-          {requestOpen && (
-            requestSent ? (
-              <div className="text-center py-4">
-                <p className="text-sm font-medium">Sent! 🚀</p>
-                <p className="text-xs mt-1" style={{ color: "var(--c-muted)" }}>A contributor will review it.</p>
-                <button onClick={resetRequest} className="text-xs mt-2 underline" style={{ color: "#7c3aed" }}>Close</button>
-              </div>
-            ) : (
-              <>
-                <h4 className="text-xs font-semibold mb-2">Request Change</h4>
+      {sidebarView !== "subjects" && (
+        <aside className="w-1/4 min-w-[220px] max-w-[280px] sticky top-0 self-start border-r shrink-0 overflow-y-auto mobile-sidebar" style={{ background: "var(--c-card)", borderColor: "var(--c-border)", height: "100vh" }}>
+          <div className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--c-muted)" }}>
+                {sidebarView === "settings" ? "⚙️ Settings" : sidebarView === "feedback" ? "📬 Feedback" : "💡 Request"}
+              </h2>
+              <button onClick={() => setSidebarView("subjects")} className="text-xs" style={{ color: "var(--c-subtle)" }}>✕</button>
+            </div>
+            {sidebarView === "request" && (
+              requestSent ? (
+                <div className="text-center py-4">
+                  <p className="text-sm font-medium">Sent! 🚀</p>
+                  <p className="text-xs mt-1" style={{ color: "var(--c-muted)" }}>A contributor will review it.</p>
+                  <button onClick={() => { setRequestSent(false); setRequestMsg("") }} className="text-xs mt-2 underline" style={{ color: "#7c3aed" }}>New request</button>
+                </div>
+              ) : (
                 <div className="space-y-2">
                   <select value={requestSubject} onChange={e => setRequestSubject(e.target.value)} className="w-full rounded-lg border text-sm p-2" style={{ background: "var(--c-bg)", borderColor: "var(--c-border)", color: "var(--c-fg)" }}>
                     <option value="">Select subject...</option>
@@ -132,26 +136,32 @@ export default function ClassroomView() {
                   <textarea value={requestMsg} onChange={e => setRequestMsg(e.target.value)} rows={3} className="w-full rounded-lg border text-sm p-2 resize-none" style={{ background: "var(--c-bg)", borderColor: "var(--c-border)", color: "var(--c-fg)" }} placeholder="Describe the change..." />
                   <button onClick={sendRequest} disabled={!requestMsg.trim() || !requestSubject} className="w-full text-xs text-white px-3 py-1.5 rounded-lg font-medium disabled:opacity-50" style={{ background: "#7c3aed" }}>Send Request</button>
                 </div>
-              </>
-            )
-          )}
-          {feedbackOpen && (
-            feedbackSent ? (
-              <div className="text-center py-2">
-                <p className="text-sm font-medium">Sent! ✅</p>
-                <button onClick={() => { setFeedbackOpen(false); setFeedbackSent(false); setFeedbackMsg("") }} className="text-xs mt-2 underline" style={{ color: "#2563eb" }}>Close</button>
+              )
+            )}
+            {sidebarView === "feedback" && (
+              feedbackSent ? (
+                <div className="text-center py-4">
+                  <p className="text-sm font-medium">Sent! ✅</p>
+                  <button onClick={() => { setFeedbackSent(false); setFeedbackMsg("") }} className="text-xs mt-2 underline" style={{ color: "#2563eb" }}>Send another</button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <textarea value={feedbackMsg} onChange={e => setFeedbackMsg(e.target.value)} rows={4} className="w-full rounded-lg border text-sm p-2 resize-none" style={{ background: "var(--c-bg)", borderColor: "var(--c-border)", color: "var(--c-fg)" }} placeholder="Bugs, ideas..." />
+                  <button onClick={sendFeedback} disabled={!feedbackMsg.trim()} className="w-full text-xs text-white px-3 py-1.5 rounded-lg font-medium disabled:opacity-50" style={{ background: "#2563eb" }}>Send Feedback</button>
+                </div>
+              )
+            )}
+            {sidebarView === "settings" && (
+              <div className="space-y-3">
+                <Link href="/admin/dashboard" className="block w-full text-sm px-3 py-2 rounded-lg transition-colors hover:bg-black/5" style={{ color: "var(--c-subtle)" }} onClick={() => setSidebarView("subjects")}>Admin</Link>
+                <button onClick={() => { logOut(); setSidebarView("subjects") }} className="w-full text-left text-sm px-3 py-2 rounded-lg transition-colors hover:bg-black/5" style={{ color: "var(--c-subtle)" }}>Log out</button>
               </div>
-            ) : (
-              <>
-                <h4 className="text-xs font-semibold mb-2">Send Feedback</h4>
-                <textarea value={feedbackMsg} onChange={e => setFeedbackMsg(e.target.value)} rows={3} className="w-full rounded-lg border text-sm p-2 resize-none" style={{ background: "var(--c-bg)", borderColor: "var(--c-border)", color: "var(--c-fg)" }} placeholder="Bugs, ideas..." />
-                <button onClick={sendFeedback} disabled={!feedbackMsg.trim()} className="mt-2 text-xs text-white px-3 py-1.5 rounded-lg font-medium disabled:opacity-50" style={{ background: "#2563eb" }}>Send</button>
-              </>
-            )
-          )}
-        </div>
+            )}
+          </div>
+        </aside>
       )}
 
+      {sidebarView === "subjects" && (
       <aside
         className={`w-1/4 min-w-[220px] max-w-[280px] sticky top-0 self-start border-r shrink-0 overflow-y-auto mobile-sidebar ${activeSubject ? "hidden sm:block" : ""}`}
         style={{ background: "var(--c-card)", borderColor: "var(--c-border)", height: "100vh" }}
@@ -187,6 +197,7 @@ export default function ClassroomView() {
           )}
         </div>
       </aside>
+      )}
 
       <main className="flex-1 p-6 overflow-y-auto mobile-px pb-16 sm:pb-6" style={{ height: "100vh" }}>
           {!activeSubject ? (

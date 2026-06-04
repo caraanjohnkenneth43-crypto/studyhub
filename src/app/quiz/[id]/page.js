@@ -1,12 +1,13 @@
 'use client'
 
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import SettingsPanel from "../../SettingsPanel"
 
 export default function QuizPage() {
   const params = useParams()
+  const router = useRouter()
   const [quiz, setQuiz] = useState(null)
   const [currentQ, setCurrentQ] = useState(0)
   const [selected, setSelected] = useState(null)
@@ -38,7 +39,7 @@ export default function QuizPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center" style={{ background: "var(--c-bg)", color: "var(--c-subtle)" }}>
         <p className="text-lg">Quiz not found.</p>
-        <Link href="/dashboard" className="text-sm underline mt-2" style={{ color: "#3b82f6" }}>Go to dashboard</Link>
+          <button onClick={() => router.back()} className="text-sm underline mt-2" style={{ color: "#3b82f6" }}>Go back</button>
       </div>
     )
   }
@@ -72,7 +73,7 @@ export default function QuizPage() {
           <h1 className="text-xl font-bold" style={{ color: "var(--c-fg)" }}>Quiz Complete!</h1>
           <p className="text-3xl font-bold mt-3 mb-3" style={{ color: "#2563eb" }}>{score}/{total}</p>
           <p className="text-sm" style={{ color: "var(--c-muted)" }}>{percent >= 70 ? "Great job!" : "Keep practicing!"}</p>
-          <Link href="/dashboard" className="inline-block mt-4 text-sm underline" style={{ color: "#3b82f6" }}>Back to dashboard</Link>
+          <button onClick={() => router.back()} className="inline-block mt-4 text-sm underline" style={{ color: "#3b82f6" }}>Back</button>
         </div>
       </div>
     )
@@ -82,7 +83,7 @@ export default function QuizPage() {
     <div className="min-h-screen py-8" style={{ background: "var(--c-bg)" }}>
       <div className="max-w-xl mx-auto px-4">
         <div className="mb-4 flex items-center justify-between header-content">
-          <Link href="/dashboard" className="text-sm" style={{ color: "var(--c-subtle)" }}>&larr; Back</Link>
+          <button onClick={() => router.back()} className="text-sm" style={{ color: "var(--c-subtle)" }}>&larr; Back</button>
           <div className="flex items-center gap-2">
             <SettingsPanel />
             <span className="text-xs" style={{ color: "var(--c-subtle)" }}>Q{currentQ + 1}/{total}</span>

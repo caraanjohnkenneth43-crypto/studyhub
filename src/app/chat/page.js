@@ -72,7 +72,7 @@ export default function ChatPage() {
       <header style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }} className="border-b">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/dashboard" className="text-sm px-2 py-1 rounded transition-colors hover:bg-black/5" style={{ color: "var(--c-muted)" }}>&larr;</Link>
+            <button onClick={() => router.back()} className="text-sm px-2 py-1 rounded transition-colors hover:bg-black/5" style={{ color: "var(--c-muted)" }}>&larr;</button>
             <span className="text-lg font-bold" style={{ color: "var(--c-fg)" }}>Chat</span>
             <Link href="/dashboard" className="text-xs px-2 py-0.5 rounded" style={{ color: "var(--c-subtle)" }}>Dashboard</Link>
             <Link href="/admin/dashboard" className="text-xs px-2 py-0.5 rounded" style={{ color: "var(--c-subtle)" }}>Admin</Link>
