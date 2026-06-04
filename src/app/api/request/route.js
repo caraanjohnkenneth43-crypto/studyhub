@@ -3,13 +3,18 @@ import { collection, addDoc, getDocs, query, orderBy } from "firebase/firestore"
 
 export async function POST(request) {
   try {
-    const { name, message } = await request.json()
+    const { name, message, subjectId, subjectName, actionType, targetType } = await request.json()
     if (!message || typeof message !== "string" || !message.trim()) {
       return Response.json({ success: false, error: "Message is required" }, { status: 400 })
     }
     await addDoc(collection(db, "requests"), {
       name: typeof name === "string" && name.trim() ? name.trim() : "Anonymous",
       message: message.trim(),
+      subjectId: subjectId || "",
+      subjectName: subjectName || "",
+      actionType: ["add", "edit", "remove"].includes(actionType) ? actionType : "edit",
+      targetType: ["quiz", "link", "subject", "info"].includes(targetType) ? targetType : "quiz",
+      status: "open",
       timestamp: new Date().toISOString(),
     })
     return Response.json({ success: true })

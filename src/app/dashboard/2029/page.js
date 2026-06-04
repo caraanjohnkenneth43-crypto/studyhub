@@ -13,10 +13,11 @@ export default function ClassroomView() {
   const [activeSubjectId, setActiveSubjectId] = useState(null)
   const [feedbackOpen, setFeedbackOpen] = useState(false)
   const [requestOpen, setRequestOpen] = useState(false)
-  const [feedbackMsg, setFeedbackMsg] = useState("")
   const [requestMsg, setRequestMsg] = useState("")
-  const [feedbackSent, setFeedbackSent] = useState(false)
   const [requestSent, setRequestSent] = useState(false)
+  const [requestSubject, setRequestSubject] = useState("")
+  const [requestAction, setRequestAction] = useState("edit")
+  const [requestTarget, setRequestTarget] = useState("quiz")
 
   useEffect(() => {
     if (!loading && !user) router.push("/login")
@@ -38,12 +39,28 @@ export default function ClassroomView() {
 
   const sendRequest = async () => {
     if (!requestMsg.trim()) return
+    const subj = subjects.find(s => s.id === requestSubject)
     await fetch("/api/request", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: requestMsg }),
+      body: JSON.stringify({
+        message: requestMsg.trim(),
+        subjectId: requestSubject,
+        subjectName: subj?.name || "",
+        actionType: requestAction,
+        targetType: requestTarget,
+      }),
     })
     setRequestSent(true)
+  }
+
+  const resetRequest = () => {
+    setRequestOpen(false)
+    setRequestSent(false)
+    setRequestMsg("")
+    setRequestSubject("")
+    setRequestAction("edit")
+    setRequestTarget("quiz")
   }
 
   if (loading || !user || !data) {
@@ -71,15 +88,40 @@ export default function ClassroomView() {
         <div className="fixed left-14 top-4 z-50 w-72 rounded-xl border shadow-lg p-4" style={{ background: "var(--c-card)", borderColor: "var(--c-border)", color: "var(--c-fg)" }}>
           {requestOpen && (
             requestSent ? (
-              <div className="text-center py-2">
+              <div className="text-center py-4">
                 <p className="text-sm font-medium">Sent! 🚀</p>
-                <button onClick={() => { setRequestOpen(false); setRequestSent(false); setRequestMsg("") }} className="text-xs mt-2 underline" style={{ color: "#7c3aed" }}>Close</button>
+                <p className="text-xs mt-1" style={{ color: "var(--c-muted)" }}>A contributor will review it.</p>
+                <button onClick={resetRequest} className="text-xs mt-2 underline" style={{ color: "#7c3aed" }}>Close</button>
               </div>
             ) : (
               <>
-                <h4 className="text-xs font-semibold mb-2">Request a Feature</h4>
-                <textarea value={requestMsg} onChange={e => setRequestMsg(e.target.value)} rows={3} className="w-full rounded-lg border text-sm p-2 resize-none" style={{ background: "var(--c-bg)", borderColor: "var(--c-border)", color: "var(--c-fg)" }} placeholder="What feature?" />
-                <button onClick={sendRequest} disabled={!requestMsg.trim()} className="mt-2 text-xs text-white px-3 py-1.5 rounded-lg font-medium disabled:opacity-50" style={{ background: "#7c3aed" }}>Send</button>
+                <h4 className="text-xs font-semibold mb-2">Request Change</h4>
+                <div className="space-y-2">
+                  <select value={requestSubject} onChange={e => setRequestSubject(e.target.value)} className="w-full rounded-lg border text-sm p-2" style={{ background: "var(--c-bg)", borderColor: "var(--c-border)", color: "var(--c-fg)" }}>
+                    <option value="">Select subject...</option>
+                    {subjects.map(s => <option key={s.id} value={s.id}>{s.icon} {s.name}</option>)}
+                  </select>
+                  <div className="flex gap-1">
+                    {["add", "edit", "remove"].map(a => (
+                      <button key={a} onClick={() => setRequestAction(a)} className="flex-1 text-xs py-1.5 rounded-lg border capitalize" style={{
+                        background: requestAction === a ? "#7c3aed" : "transparent",
+                        borderColor: requestAction === a ? "#7c3aed" : "var(--c-border)",
+                        color: requestAction === a ? "white" : "var(--c-fg)",
+                      }}>{a}</button>
+                    ))}
+                  </div>
+                  <div className="flex gap-1">
+                    {[{k:"quiz",l:"Quiz"},{k:"link",l:"Link"},{k:"subject",l:"Subject"},{k:"info",l:"Info"}].map(t => (
+                      <button key={t.k} onClick={() => setRequestTarget(t.k)} className="flex-1 text-xs py-1.5 rounded-lg border" style={{
+                        background: requestTarget === t.k ? "#7c3aed" : "transparent",
+                        borderColor: requestTarget === t.k ? "#7c3aed" : "var(--c-border)",
+                        color: requestTarget === t.k ? "white" : "var(--c-fg)",
+                      }}>{t.l}</button>
+                    ))}
+                  </div>
+                  <textarea value={requestMsg} onChange={e => setRequestMsg(e.target.value)} rows={3} className="w-full rounded-lg border text-sm p-2 resize-none" style={{ background: "var(--c-bg)", borderColor: "var(--c-border)", color: "var(--c-fg)" }} placeholder="Describe the change..." />
+                  <button onClick={sendRequest} disabled={!requestMsg.trim() || !requestSubject} className="w-full text-xs text-white px-3 py-1.5 rounded-lg font-medium disabled:opacity-50" style={{ background: "#7c3aed" }}>Send Request</button>
+                </div>
               </>
             )
           )}
