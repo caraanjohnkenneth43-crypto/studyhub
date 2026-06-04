@@ -33,19 +33,17 @@ export default function DashboardHome() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "var(--c-bg)" }}>
-      <header style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }} className="border-b">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-lg font-bold" style={{ color: "var(--c-fg)" }}>StudyHub</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-xs hidden sm:inline" style={{ color: "var(--c-subtle)" }}>{user.email}</span>
-          </div>
-        </div>
-      </header>
-
       <div className="flex-1 flex w-full">
         <div className="w-72 shrink-0 p-6 flex flex-col gap-4 h-full">
+          <div className="flex items-center justify-between mb-2">
+            <h1 className="text-2xl font-extrabold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
+              StudyHub
+            </h1>
+            <SettingsPanel>
+              <Link href="/admin/dashboard" className="block text-sm px-2 py-1.5 rounded-lg transition-colors hover:bg-black/5" style={{ color: "var(--c-subtle)" }}>Admin</Link>
+              <button onClick={logOut} className="w-full text-left text-sm px-2 py-1.5 rounded-lg transition-colors hover:bg-black/5" style={{ color: "var(--c-subtle)" }}>Log out</button>
+            </SettingsPanel>
+          </div>
           <button
             onClick={() => router.push("/dashboard/2029")}
             className="w-full rounded-xl border-2 card-pad text-left transition-all hover:border-blue-400"
@@ -58,13 +56,6 @@ export default function DashboardHome() {
             <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: "var(--c-muted)" }}>Classroom</p>
             <p className="text-base font-semibold">Class of 2029 &rarr;</p>
           </button>
-
-          <div className="mt-auto">
-            <SettingsPanel>
-              <Link href="/admin/dashboard" className="block text-sm px-2 py-1.5 rounded-lg transition-colors hover:bg-black/5" style={{ color: "var(--c-subtle)" }}>Admin</Link>
-              <button onClick={logOut} className="w-full text-left text-sm px-2 py-1.5 rounded-lg transition-colors hover:bg-black/5" style={{ color: "var(--c-subtle)" }}>Log out</button>
-            </SettingsPanel>
-          </div>
         </div>
 
         <main className="flex-1 p-6 overflow-y-auto border-l" style={{ borderColor: "var(--c-border)", height: "calc(100vh - 49px)" }}>
