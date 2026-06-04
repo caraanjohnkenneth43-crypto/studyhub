@@ -1,6 +1,4 @@
 import "./globals.css";
-import FeedbackWidget from "./FeedbackWidget"
-import RequestWidget from "./RequestWidget"
 import { AuthProvider } from "./AuthProvider"
 
 export const metadata = {
@@ -40,8 +38,6 @@ export default function RootLayout({ children }) {
         <AuthProvider>
           {children}
         </AuthProvider>
-        <RequestWidget />
-        <FeedbackWidget />
       </body>
     </html>
   );
