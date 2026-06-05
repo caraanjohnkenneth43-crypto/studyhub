@@ -72,13 +72,24 @@ export default function ChatRoom() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
 
+  const blockedWords = ["fuck", "shit", "cunt", "bitch", "asshole", "dick", "bastard"]
+
+  const censor = (msg) => {
+    let censored = msg
+    for (const word of blockedWords) {
+      const re = new RegExp("\\b" + word + "\\b", "gi")
+      censored = censored.replace(re, "*".repeat(word.length))
+    }
+    return censored
+  }
+
   const send = async (e) => {
     e.preventDefault()
     if (!text.trim()) return
     await addDoc(collection(db, "chatRooms", id, "messages"), {
       userId: user.uid,
       userName: user.email.split("@")[0],
-      text: text.trim(),
+      text: censor(text.trim()),
       timestamp: serverTimestamp(),
     })
     setText("")
