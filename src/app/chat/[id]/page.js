@@ -6,6 +6,7 @@ import Link from "next/link"
 import { useAuth } from "@/app/AuthProvider"
 import SettingsPanel from "@/app/SettingsPanel"
 import { db } from "@/lib/firebase"
+import { censorMessage } from "@/lib/profanity"
 import { doc, getDoc, deleteDoc, collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, limit } from "firebase/firestore"
 
 export default function ChatRoom() {
@@ -72,41 +73,13 @@ export default function ChatRoom() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
 
-  const blockedWords = [
-    "fuck", "shit", "cunt", "bitch", "asshole", "dick", "bastard",
-    "nigger", "nigga", "faggot", "fag", "retard", "rape", "pedo",
-    "whore", "slut", "pissed",
-  ]
-
-  const leetMap = { "0":"o", "1":"i", "3":"e", "4":"a", "5":"s", "7":"t", "@":"a", "$":"s", "!":"i", "z":"s" }
-
-  const normalizeWord = (w) => {
-    let n = w.toLowerCase()
-    n = n.split("").map(c => leetMap[c] || c).join("")
-    n = n.replace(/[^a-z]/g, "")
-    n = n.replace(/(.)\1+/g, "$1")
-    return n
-  }
-
-  const censor = (msg) => {
-    const words = msg.split(/(\s+)/)
-    return words.map(part => {
-      if (!part.trim()) return part
-      const normal = normalizeWord(part)
-      for (const bw of blockedWords) {
-        if (normal.includes(bw)) return "*".repeat(part.length)
-      }
-      return part
-    }).join("")
-  }
-
   const send = async (e) => {
     e.preventDefault()
     if (!text.trim()) return
     await addDoc(collection(db, "chatRooms", id, "messages"), {
       userId: user.uid,
       userName: user.email.split("@")[0],
-      text: censor(text.trim()),
+      text: censorMessage(text.trim()),
       timestamp: serverTimestamp(),
     })
     setText("")
