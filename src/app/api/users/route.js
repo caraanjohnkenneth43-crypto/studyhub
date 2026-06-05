@@ -1,6 +1,6 @@
 import { adminAuth } from "@/lib/firebase-admin"
 import { db } from "@/lib/firebase"
-import { collection, getDocs, query, orderBy, getDoc, doc, setDoc, collectionGroup } from "firebase/firestore"
+import { collection, getDocs, query, orderBy, getDoc, doc, setDoc } from "firebase/firestore"
 
 export async function GET() {
   try {
@@ -20,29 +20,33 @@ export async function GET() {
   const seen = new Map()
 
   try {
-    const q = query(collection(db, "users"), orderBy("email", "asc"))
-    const snap = await getDocs(q)
+    const snap = await getDocs(query(collection(db, "users"), orderBy("email", "asc")))
     snap.docs.forEach(d => {
       const data = d.data()
       if (data.email) seen.set(data.email, { uid: d.id, ...data })
     })
   } catch {}
 
-  try {
-    const msgSnap = await getDocs(query(collectionGroup(db, "messages")))
-    msgSnap.forEach(d => {
-      const data = d.data()
-      const email = data.userEmail
-      if (email && !seen.has(email)) {
-        seen.set(email, {
-          uid: data.userId || email,
-          email,
-          userName: data.userName || email.split("@")[0],
-          createdAt: data.timestamp?.seconds ? new Date(data.timestamp.seconds * 1000).toISOString() : undefined,
-          lastSeen: data.timestamp?.seconds ? new Date(data.timestamp.seconds * 1000).toISOString() : undefined,
-        })
-      }
+  const addIfMissing = (email, uid, userName, timestamp) => {
+    if (!email || seen.has(email)) return
+    seen.set(email, {
+      uid: uid || email,
+      email,
+      userName: userName || email.split("@")[0],
+      createdAt: timestamp ? new Date(timestamp).toISOString() : undefined,
+      lastSeen: timestamp ? new Date(timestamp).toISOString() : undefined,
     })
+  }
+
+  try {
+    const roomSnap = await getDocs(collection(db, "chatRooms"))
+    for (const room of roomSnap.docs) {
+      const msgSnap = await getDocs(query(collection(db, "chatRooms", room.id, "messages")))
+      msgSnap.forEach(d => {
+        const data = d.data()
+        if (data.userEmail) addIfMissing(data.userEmail, data.userId, data.userName, data.timestamp?.seconds ? data.timestamp.seconds * 1000 : null)
+      })
+    }
   } catch {}
 
   const users = [...seen.values()].sort((a, b) => (a.email || "").localeCompare(b.email || ""))
