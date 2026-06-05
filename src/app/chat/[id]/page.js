@@ -8,7 +8,7 @@ import SettingsPanel from "@/app/SettingsPanel"
 import { useActiveRoom } from "@/app/ChatNotificationProvider"
 import { db } from "@/lib/firebase"
 import { censorMessage, containsProfanity } from "@/lib/profanity"
-import { doc, getDoc, deleteDoc, updateDoc, collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, limit } from "firebase/firestore"
+import { doc, getDoc, deleteDoc, updateDoc, collection, query, orderBy, onSnapshot, getDocs, addDoc, serverTimestamp, limit } from "firebase/firestore"
 
 export default function ChatRoom() {
   const { id } = useParams()
@@ -26,6 +26,7 @@ export default function ChatRoom() {
   const [showBlockPanel, setShowBlockPanel] = useState(false)
   const [blockEmail, setBlockEmail] = useState("")
   const [contributors, setContributors] = useState([])
+  const [uidToEmail, setUidToEmail] = useState({})
   const bottomRef = useRef(null)
   const messagesRef = useRef(null)
   const { setActiveRoom } = useActiveRoom()
@@ -76,7 +77,28 @@ export default function ChatRoom() {
   }, [id, verified])
 
   useEffect(() => {
-    fetch("/api/data").then(r => r.json()).then(d => setContributors(d.contributors || [])).catch(() => {})
+    fetch("/api/data").then(r => r.json()).then(d => { setContributors(d.contributors || []); console.log("[chat] contributors from /api/data:", d.contributors) }).catch(e => console.warn("[chat] failed to fetch contributors:", e))
+
+    const loadMap = async () => {
+      const map = {}
+      try {
+        const r = await fetch("/api/users")
+        const d = await r.json()
+        ;(d.users || []).forEach(u => { if (u.uid && u.email) map[u.uid] = u.email })
+        console.log("[chat] /api/users returned", d.users?.length, "users")
+      } catch (e) { console.warn("[chat] /api/users fetch failed:", e) }
+      try {
+        const snap = await getDocs(collection(db, "users"))
+        snap.forEach(d => {
+          const data = d.data()
+          if (data.uid && data.email) map[data.uid] = data.email
+        })
+        console.log("[chat] firestore users collection returned", snap.docs.length, "docs")
+      } catch (e) { console.warn("[chat] firestore users query failed:", e) }
+      console.log("[chat] final uidToEmail map:", Object.keys(map).length, "entries", map)
+      setUidToEmail(map)
+    }
+    loadMap()
   }, [])
 
   const checkPassword = () => {
@@ -258,18 +280,22 @@ export default function ChatRoom() {
               <p className="text-sm">No messages yet. Start the conversation!</p>
             </div>
           )}
-          {messages.map(msg => (
+          {messages.map(msg => {
+            const email = msg.userEmail || uidToEmail[msg.userId]
+            const isOwn = msg.userId === user.uid
+            const isAdmin = !isOwn && email && allowedAdmins.includes(email)
+            const isContributor = !isOwn && email && !isAdmin && contributors.includes(email)
+            if (msg.id === messages[0]?.id) console.log("[chat] render msg:", { id: msg.id, userId: msg.userId, userEmail: msg.userEmail, resolvedEmail: email, isAdmin, isContributor, uidToEmailKeys: Object.keys(uidToEmail), contributors })
+            return (
             <div key={msg.id} className="flex gap-2 px-2 min-w-0">
               <span className={`text-xs font-medium shrink-0 mt-0.5 ${(() => {
-                const email = msg.userEmail
-                if (msg.userId === user.uid) return ""
-                if (email && allowedAdmins.includes(email)) return "font-bold bg-gradient-to-r from-gray-700 via-gray-300 to-white bg-clip-text text-transparent"
-                if (email && contributors.includes(email)) return "bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent"
+                if (isOwn) return ""
+                if (isAdmin) return "font-bold bg-gradient-to-r from-gray-700 via-gray-300 to-white bg-clip-text text-transparent"
+                if (isContributor) return "font-bold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent"
                 return ""
               })()}`} style={{ color: (() => {
-                const email = msg.userEmail
-                if (msg.userId === user.uid) return "#3b82f6"
-                if (email && (allowedAdmins.includes(email) || contributors.includes(email))) return undefined
+                if (isOwn) return "#3b82f6"
+                if (isAdmin || isContributor) return undefined
                 return "var(--c-fg)"
               })() }}>
                 {msg.userName || "Anonymous"}:
@@ -281,7 +307,8 @@ export default function ChatRoom() {
                 </span>
               )}
             </div>
-          ))}
+            )
+          })}
           <div ref={bottomRef} />
         </div>
 
