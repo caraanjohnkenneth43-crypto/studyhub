@@ -4,24 +4,33 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useAuth } from "../AuthProvider"
-import SettingsPanel from "../SettingsPanel"
+import SettingsPanel, { SettingsContent, loadSettings, applySettings } from "../SettingsPanel"
 import ReactMarkdown from "react-markdown"
 import rehypeRaw from "rehype-raw"
 
 export default function DashboardHome() {
-  const { user, loading, logOut } = useAuth()
+  const { user, loading, logOut, isAdmin } = useAuth()
   const router = useRouter()
   const [data, setData] = useState(null)
+  const [showSettings, setShowSettings] = useState(false)
+  const [settings, setSettings] = useState(null)
 
   useEffect(() => {
     if (!loading && !user) router.push("/login")
   }, [user, loading, router])
 
   useEffect(() => {
+    setSettings(loadSettings())
     fetch("/api/data").then(r => r.json()).then(setData).catch(() => setData({ subjects: [], info: [] }))
   }, [])
 
-  if (loading || !user || !data) {
+  const updateSetting = (key, value) => {
+    const next = { ...settings, [key]: value }
+    setSettings(next)
+    applySettings(next)
+  }
+
+  if (loading || !user || !data || !settings) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--c-bg)", color: "var(--c-subtle)" }}>
         Loading...
@@ -35,27 +44,34 @@ export default function DashboardHome() {
     <div className="min-h-screen flex flex-col" style={{ background: "var(--c-bg)" }}>
       <div className="flex-1 flex w-full mobile-stack">
         <div className="w-72 shrink-0 p-6 flex flex-col gap-4 h-full mobile-sidebar">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between">
             <h1 className="text-2xl font-extrabold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
               StudyHub
             </h1>
-            <SettingsPanel>
-              <Link href="/admin/dashboard" className="block text-sm px-2 py-1.5 rounded-lg transition-colors hover:bg-black/5" style={{ color: "var(--c-subtle)" }}>Admin</Link>
-              <button onClick={logOut} className="w-full text-left text-sm px-2 py-1.5 rounded-lg transition-colors hover:bg-black/5" style={{ color: "var(--c-subtle)" }}>Log out</button>
-            </SettingsPanel>
+            <SettingsPanel noPopup onOpen={() => setShowSettings(s => !s)} />
           </div>
-          <button
-            onClick={() => router.push("/dashboard/2029")}
-            className="w-full rounded-xl border-2 card-pad text-left transition-all hover:border-blue-400"
-            style={{
-              background: "var(--c-card)",
-              borderColor: "var(--c-border)",
-              color: "var(--c-fg)",
-            }}
-          >
-            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: "var(--c-muted)" }}>Classroom</p>
-            <p className="text-base font-semibold">Class of 2029 &rarr;</p>
-          </button>
+
+          {showSettings ? (
+            <div className="flex-1 flex flex-col gap-3 min-h-0 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              <SettingsContent settings={settings} onUpdate={updateSetting} user={user} />
+              <hr className="border-t" style={{ borderColor: "var(--c-border)" }} />
+              {isAdmin && <Link href="/admin/dashboard" className="block w-full text-sm px-3 py-2 rounded-lg transition-colors hover:bg-black/5" style={{ color: "var(--c-subtle)" }}>Admin</Link>}
+              <button onClick={logOut} className="w-full text-left text-sm px-3 py-2 rounded-lg transition-colors hover:bg-black/5" style={{ color: "var(--c-subtle)" }}>Log out</button>
+            </div>
+          ) : (
+            <button
+              onClick={() => router.push("/dashboard/2029")}
+              className="w-full rounded-xl border-2 card-pad text-left transition-all hover:border-blue-400"
+              style={{
+                background: "var(--c-card)",
+                borderColor: "var(--c-border)",
+                color: "var(--c-fg)",
+              }}
+            >
+              <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: "var(--c-muted)" }}>Classroom</p>
+              <p className="text-base font-semibold">Class of 2029 &rarr;</p>
+            </button>
+          )}
         </div>
 
         <main className="flex-1 p-6 overflow-y-auto border-l mobile-px" style={{ borderColor: "var(--c-border)", height: "calc(100vh - 49px)" }}>

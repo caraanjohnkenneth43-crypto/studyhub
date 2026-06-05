@@ -1,5 +1,6 @@
 import "./globals.css";
 import { AuthProvider } from "./AuthProvider"
+import { ChatNotificationProvider } from "./ChatNotificationProvider"
 
 export const metadata = {
   title: "StudyHub",
@@ -13,7 +14,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className="h-full antialiased density-comfortable" suppressHydrationWarning>
+    <html lang="en" className="h-full antialiased" suppressHydrationWarning>
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -23,9 +24,7 @@ export default function RootLayout({ children }) {
               try {
                 var s = JSON.parse(localStorage.getItem("studyhub-settings") || "{}");
                 if (s.dark) document.documentElement.classList.add("dark");
-                if (s.fontSize === "small") document.documentElement.style.fontSize = "14px";
-                else if (s.fontSize === "large") document.documentElement.style.fontSize = "18px";
-                if (s.density) document.documentElement.classList.add("density-" + s.density);
+                if (typeof s.fontSize === "number") document.documentElement.style.fontSize = s.fontSize + "px";
                 if ("serviceWorker" in navigator) {
                   navigator.serviceWorker.register("/sw.js");
                 }
@@ -36,7 +35,9 @@ export default function RootLayout({ children }) {
       </head>
       <body className="min-h-full flex flex-col">
         <AuthProvider>
-          {children}
+          <ChatNotificationProvider>
+            {children}
+          </ChatNotificationProvider>
         </AuthProvider>
       </body>
     </html>

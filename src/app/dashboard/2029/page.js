@@ -1,13 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useAuth } from "@/app/AuthProvider"
-import SettingsPanel, { settingsDefaults, loadSettings, applySettings } from "@/app/SettingsPanel"
+import SettingsPanel, { SettingsContent, settingsDefaults, loadSettings, applySettings } from "@/app/SettingsPanel"
 
 export default function ClassroomView() {
-  const { user, loading, logOut } = useAuth()
+  const { user, loading, logOut, isAdmin } = useAuth()
   const router = useRouter()
   const [data, setData] = useState(null)
   const [activeSubjectId, setActiveSubjectId] = useState(null)
@@ -20,6 +20,13 @@ export default function ClassroomView() {
   const [requestSubject, setRequestSubject] = useState("")
   const [requestAction, setRequestAction] = useState("edit")
   const [requestTarget, setRequestTarget] = useState("quiz")
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    try { return Number(localStorage.getItem("studyhub-sidebar-width")) || 280 } catch { return 280 }
+  })
+  const dragRef = useRef(false)
+  const startXRef = useRef(0)
+  const startWidthRef = useRef(0)
+  const widthRef = useRef(sidebarWidth)
 
   useEffect(() => {
     if (!loading && !user) router.push("/login")
@@ -38,6 +45,37 @@ export default function ClassroomView() {
     setSettings(next)
     applySettings(next)
   }
+
+  const onDragStart = useCallback((e) => {
+    dragRef.current = true
+    startXRef.current = e.clientX
+    startWidthRef.current = sidebarWidth
+    document.body.style.cursor = "col-resize"
+    document.body.style.userSelect = "none"
+  }, [sidebarWidth])
+
+  useEffect(() => {
+    const onMove = (e) => {
+      if (!dragRef.current) return
+      const delta = e.clientX - startXRef.current
+      const newWidth = Math.max(200, Math.min(500, startWidthRef.current + delta))
+      widthRef.current = newWidth
+      setSidebarWidth(newWidth)
+    }
+    const onUp = () => {
+      if (!dragRef.current) return
+      dragRef.current = false
+      document.body.style.cursor = ""
+      document.body.style.userSelect = ""
+      try { localStorage.setItem("studyhub-sidebar-width", String(widthRef.current)) } catch {}
+    }
+    document.addEventListener("mousemove", onMove)
+    document.addEventListener("mouseup", onUp)
+    return () => {
+      document.removeEventListener("mousemove", onMove)
+      document.removeEventListener("mouseup", onUp)
+    }
+  }, [])
 
   const sendFeedback = async () => {
     if (!feedbackMsg.trim()) return
@@ -105,7 +143,7 @@ export default function ClassroomView() {
       </nav>
 
       {sidebarView !== "subjects" && (
-        <aside className="w-1/4 min-w-[220px] max-w-[280px] sticky top-0 self-start border-r shrink-0 overflow-y-auto mobile-sidebar" style={{ background: "var(--c-card)", borderColor: "var(--c-border)", height: "100vh" }}>
+        <aside className="sticky top-0 self-start border-r shrink-0 overflow-y-auto mobile-sidebar" style={{ background: "var(--c-card)", borderColor: "var(--c-border)", height: "100vh", width: sidebarWidth }}>
           <div className="p-4">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--c-muted)" }}>
@@ -164,47 +202,20 @@ export default function ClassroomView() {
             )}
             {sidebarView === "settings" && (
               <div className="space-y-3">
-                <label className="flex items-center justify-between text-sm">
-                  <span style={{ color: "var(--c-fg)" }}>Dark Mode</span>
-                  <button onClick={() => updateSetting("dark", !settings.dark)} className="text-base">{settings.dark ? "☀️" : "🌙"}</button>
-                </label>
-                <div>
-                  <span className="text-sm block mb-1" style={{ color: "var(--c-fg)" }}>Font Size</span>
-                  <div className="flex gap-1">
-                    {["small", "medium", "large"].map(size => (
-                      <button key={size} onClick={() => updateSetting("fontSize", size)} className="flex-1 text-xs py-1 rounded border capitalize" style={{
-                        background: settings.fontSize === size ? "#2563eb" : "transparent",
-                        borderColor: settings.fontSize === size ? "#2563eb" : "var(--c-border)",
-                        color: settings.fontSize === size ? "white" : "var(--c-fg)",
-                      }}>{size}</button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <span className="text-sm block mb-1" style={{ color: "var(--c-fg)" }}>Density</span>
-                  <div className="flex gap-1">
-                    {[{k:"compact",l:"Compact"},{k:"comfortable",l:"Normal"},{k:"spacious",l:"Spacious"}].map(d => (
-                      <button key={d.k} onClick={() => updateSetting("density", d.k)} className="flex-1 text-xs py-1 rounded border" style={{
-                        background: settings.density === d.k ? "#2563eb" : "transparent",
-                        borderColor: settings.density === d.k ? "#2563eb" : "var(--c-border)",
-                        color: settings.density === d.k ? "white" : "var(--c-fg)",
-                      }}>{d.l}</button>
-                    ))}
-                  </div>
-                </div>
+                <SettingsContent settings={settings} onUpdate={updateSetting} user={user} />
                 <hr className="border-t" style={{ borderColor: "var(--c-border)" }} />
-                <Link href="/admin/dashboard" className="block w-full text-sm px-3 py-2 rounded-lg transition-colors hover:bg-black/5" style={{ color: "var(--c-subtle)" }} onClick={() => setSidebarView("subjects")}>Admin</Link>
+                {isAdmin && <Link href="/admin/dashboard" className="block w-full text-sm px-3 py-2 rounded-lg transition-colors hover:bg-black/5" style={{ color: "var(--c-subtle)" }} onClick={() => setSidebarView("subjects")}>Admin</Link>}
                 <button onClick={() => { logOut(); setSidebarView("subjects") }} className="w-full text-left text-sm px-3 py-2 rounded-lg transition-colors hover:bg-black/5" style={{ color: "var(--c-subtle)" }}>Log out</button>
               </div>
             )}
-          </div>
-        </aside>
+        </div>
+      </aside>
       )}
 
       {sidebarView === "subjects" && (
       <aside
-        className={`w-1/4 min-w-[220px] max-w-[280px] sticky top-0 self-start border-r shrink-0 overflow-y-auto mobile-sidebar ${activeSubject ? "hidden sm:block" : ""}`}
-        style={{ background: "var(--c-card)", borderColor: "var(--c-border)", height: "100vh" }}
+        className={`sticky top-0 self-start border-r shrink-0 overflow-y-auto mobile-sidebar ${activeSubject ? "hidden sm:block" : ""}`}
+        style={{ background: "var(--c-card)", borderColor: "var(--c-border)", height: "100vh", width: sidebarWidth }}
       >
         <div className="p-4">
           <h2 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: "var(--c-muted)" }}>Subjects</h2>
@@ -238,6 +249,8 @@ export default function ClassroomView() {
         </div>
       </aside>
       )}
+
+      <div className="w-1 shrink-0 cursor-col-resize hidden sm:block hover:bg-blue-400/30" onMouseDown={onDragStart} />
 
       <main className="flex-1 p-6 overflow-y-auto mobile-px pb-16 sm:pb-6" style={{ height: "100vh" }}>
           {!activeSubject ? (

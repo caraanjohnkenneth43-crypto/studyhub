@@ -3,18 +3,19 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import SettingsPanel from "../../SettingsPanel"
-import { useAuth } from "../../AuthProvider"
+import { useAuth, allowedAdmins } from "../../AuthProvider"
 
 const TABS = [
   { key: "subjects", label: "📚 Subjects" },
   { key: "contributors", label: "👥 Contributors" },
+  { key: "users", label: "👤 Users" },
   { key: "feedback", label: "💬 Feedback" },
   { key: "requests", label: "🚀 Requests" },
   { key: "info", label: "📋 Dashboard Info" },
 ]
 
 export default function AdminDashboard() {
-  const { user, loading, logOut } = useAuth()
+  const { user, loading, logOut, isAdmin } = useAuth()
   const router = useRouter()
   const [data, setData] = useState(null)
   const [activeSubject, setActiveSubject] = useState(null)
@@ -25,6 +26,7 @@ export default function AdminDashboard() {
   const [requests, setRequests] = useState([])
   const [infoSections, setInfoSections] = useState([])
   const [contributorInput, setContributorInput] = useState("")
+  const [users, setUsers] = useState([])
   const [fontSizeOpen, setFontSizeOpen] = useState(null)
   const [fontSizeValue, setFontSizeValue] = useState(16)
   const [headingOpen, setHeadingOpen] = useState(null)
@@ -42,6 +44,15 @@ export default function AdminDashboard() {
     )
   }
 
+  useEffect(() => {
+    if (!loading && user && data) {
+      const contributorEmails = data.contributors || []
+      if (!isAdmin && !contributorEmails.includes(user.email)) {
+        router.push("/dashboard")
+      }
+    }
+  }, [user, loading, router, isAdmin, data])
+
   const defaultSubject = { id: "", name: "", icon: "📘", description: "", color: "#3b82f6", classroom: "2029", quizzes: [], links: [] }
   const defaultQuiz = { id: "", title: "", questions: [{ question: "", options: ["", "", "", ""], answer: "" }] }
   const defaultLink = { title: "", url: "", description: "" }
@@ -56,6 +67,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (tab === "feedback") fetch("/api/feedback").then(r => r.json()).then(setFeedback)
     if (tab === "requests") fetch("/api/request").then(r => r.json()).then(setRequests)
+    if (tab === "users") fetch("/api/users").then(r => r.json()).then(setUsers)
   }, [tab])
 
   const save = async (newData) => {
@@ -194,6 +206,8 @@ export default function AdminDashboard() {
     )
   }
 
+  const visibleTabs = TABS.filter(t => isAdmin || t.key !== "contributors")
+
   const subject = activeSubject !== null ? data.subjects[activeSubject] : null
   const contributors = data.contributors || []
 
@@ -219,7 +233,7 @@ export default function AdminDashboard() {
       </header>
 
       <nav className="flex gap-1 px-6 pt-4 border-b admin-tabs" style={{ borderColor: "var(--c-border)" }}>
-        {TABS.map(t => (
+        {visibleTabs.map(t => (
           <button key={t.key} onClick={() => { setTab(t.key); setActiveSubject(null) }} className="px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors" style={{
             background: tab === t.key ? "var(--c-card)" : "transparent",
             color: tab === t.key ? "var(--c-fg)" : "var(--c-muted)",
@@ -245,14 +259,14 @@ export default function AdminDashboard() {
                   <div
                     key={i}
                     onClick={() => setActiveSubject(i)}
-                    className="flex items-center justify-between px-3 py-2.5 rounded-lg text-sm cursor-pointer transition-colors"
+                    className="flex items-center justify-between px-3 py-2.5 rounded-lg text-sm cursor-pointer transition-colors min-w-0"
                     style={{
                       background: activeSubject === i ? "#dbeafe" : "transparent",
                       color: activeSubject === i ? "#1d40ed" : "var(--c-fg)",
                     }}
                   >
-                    <span className="font-medium">{s.icon} {s.name || "New Subject"}</span>
-                    <button onClick={(e) => { e.stopPropagation(); deleteSubject(i) }} className="text-xs ml-2" style={{ color: "var(--c-subtle)" }}>✕</button>
+                    <span className="font-medium truncate min-w-0">{s.icon} {s.name || "New Subject"}</span>
+                    <button onClick={(e) => { e.stopPropagation(); deleteSubject(i) }} className="text-xs ml-2 shrink-0" style={{ color: "var(--c-subtle)" }}>✕</button>
                   </div>
                 ))}
               </div>
@@ -352,7 +366,7 @@ export default function AdminDashboard() {
           </>
         )}
 
-        {tab === "contributors" && (
+        {tab === "contributors" && isAdmin && (
           <div className="flex-1 p-6 max-w-2xl">
             <h2 className="text-lg font-semibold mb-4" style={{ color: "var(--c-fg)" }}>👥 Contributors</h2>
             <p className="text-sm mb-4" style={{ color: "var(--c-muted)" }}>Contributors can review and act on student requests.</p>
@@ -372,6 +386,38 @@ export default function AdminDashboard() {
             <button onClick={() => save()} disabled={saving} className="mt-6 px-5 py-2.5 text-white rounded-lg text-sm font-medium disabled:opacity-50" style={{ background: "#2563eb" }}>
               {saving ? "Saving..." : "Save Contributors"}
             </button>
+          </div>
+        )}
+
+        {tab === "users" && (
+          <div className="flex-1 p-6 max-w-2xl">
+            <h2 className="text-lg font-semibold mb-1" style={{ color: "var(--c-fg)" }}>👤 All Users</h2>
+            <p className="text-sm mb-4" style={{ color: "var(--c-muted)" }}>Every registered Firebase Auth user.</p>
+            <button onClick={() => fetch("/api/users").then(r => r.json()).then(setUsers)} className="text-sm mb-4" style={{ color: "#2563eb" }}>↻ Refresh</button>
+            {users.length === 0 ? (
+              <p className="text-sm" style={{ color: "var(--c-subtle)" }}>No users found.</p>
+            ) : (
+              <div className="space-y-1">
+                {users.map(u => {
+                  const isContributor = (data.contributors || []).includes(u.email)
+                  const isAdmin = allowedAdmins.includes(u.email)
+                  return (
+                    <div key={u.uid || u.id || u.email} className="flex items-center justify-between px-4 py-3 rounded-lg border" style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }}>
+                      <span
+                        className={`text-sm font-medium ${isAdmin ? "font-bold bg-gradient-to-r from-gray-700 via-gray-300 to-white bg-clip-text text-transparent" : ""} ${isContributor && !isAdmin ? "bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent" : ""}`}
+                        style={{ color: (!isAdmin && !isContributor) ? "var(--c-fg)" : undefined }}
+                      >
+                        {u.email}
+                      </span>
+                      <div className="flex gap-2">
+                        {isAdmin && <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{ background: "#e5e7eb", color: "#111827" }}>Admin</span>}
+                        {isContributor && !isAdmin && <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: "#ede9fe", color: "#6d28d9" }}>Contributor</span>}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
         )}
 

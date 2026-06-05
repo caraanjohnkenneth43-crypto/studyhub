@@ -77,15 +77,40 @@ const normalizeText = (text) => {
   return s
 }
 
+const normalizedSingleWords = singleWords.map(normalizeText)
+
+function buildPattern(word) {
+  return word.split("").map(c => c + "+[^a-z0-9]*?").join("")
+}
+
+export function containsProfanity(text) {
+  return censorMessage(text) !== text
+}
+
 export function censorMessage(text) {
   const separatorsRegex = /[.\-*_@+~:;,#$%^&!=|\\/()[\]]/g
 
   const normalizedFull = normalizeText(text.replace(separatorsRegex, ""))
   for (const phrase of multiWordPhrases) {
-    if (normalizedFull.includes(phrase)) {
+    if (normalizedFull.includes(normalizeText(phrase))) {
       return "*".repeat(text.length)
     }
   }
+
+  const composite = text.replace(/\s+/g, "")
+  const strippedComposite = composite.replace(separatorsRegex, "")
+  const normalComposite = normalizeText(strippedComposite)
+  for (const badWord of normalizedSingleWords) {
+    if (normalComposite.includes(badWord)) {
+      const re = new RegExp(buildPattern(badWord), "gi")
+      const match = re.exec(text.replace(/\s+/g, ""))
+      if (match) {
+        return "*".repeat(text.length)
+      }
+    }
+  }
+
+  const vowels = ["a", "e", "i", "o", "u"]
 
   const tokens = text.split(/(\s+)/)
 
@@ -98,10 +123,36 @@ export function censorMessage(text) {
     const normal = normalizeText(stripped)
     if (!normal) return token
 
-    for (const badWord of singleWords) {
+    for (const badWord of normalizedSingleWords) {
       if (normal.includes(badWord)) {
         return "*".repeat(token.length)
       }
+    }
+
+    for (let i = 0; i < singleWords.length; i++) {
+      const re = new RegExp(buildPattern(singleWords[i]), "gi")
+      if (re.test(token)) {
+        return "*".repeat(token.length)
+      }
+    }
+
+    if (token.includes("*")) {
+      const parts = token.toLowerCase().split("*")
+      const tryVowels = (i, acc) => {
+        if (i >= parts.length) {
+          const filled = normalizeText(acc.join(""))
+          for (const badWord of normalizedSingleWords) {
+            if (filled.includes(badWord)) return true
+          }
+          return false
+        }
+        for (let vi = 0; vi < vowels.length; vi++) {
+          const next = parts[i] + (i < parts.length - 1 ? vowels[vi] : "")
+          if (tryVowels(i + 1, [...acc, next])) return true
+        }
+        return false
+      }
+      if (tryVowels(0, [])) return "*".repeat(token.length)
     }
 
     return token
