@@ -70,6 +70,13 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // ─── Presence (active user tracking) ─────────────────
+    match /presence/{uid} {
+      allow read: if request.auth != null;
+      allow write: if request.auth.uid == uid;
+      allow delete: if request.auth.uid == uid;
+    }
+
     // ─── Deny everything else ────────────────────────────
     match /{document=**} {
       allow read, write: if false;

@@ -68,6 +68,7 @@ export const FIRESTORE = {
   REQUESTS: "requests",
   CHAT_ROOMS: "chatRooms",
   USERS: "users",
+  PRESENCE: "presence",
 }
 
 // ─── Colors ─────────────────────────────────────────────────

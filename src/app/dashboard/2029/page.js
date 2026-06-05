@@ -5,6 +5,56 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useAuth } from "@/app/AuthProvider"
 import SettingsPanel, { SettingsContent, settingsDefaults, loadSettings, applySettings } from "@/app/SettingsPanel"
+import { db } from "@/lib/firebase"
+import { doc, setDoc, deleteDoc, collection, query, onSnapshot, serverTimestamp } from "firebase/firestore"
+
+function useActiveCount(user) {
+  const [count, setCount] = useState(0)
+
+  useEffect(() => {
+    if (!user) return
+
+    const uid = user.uid
+    const ref = doc(db, "presence", uid)
+    let lastInteraction = Date.now()
+
+    const touch = () => { lastInteraction = Date.now() }
+
+    const heartbeat = async () => {
+      if (Date.now() - lastInteraction < 5 * 60 * 1000) {
+        try { await setDoc(ref, { lastActive: serverTimestamp() }) } catch {}
+      }
+    }
+
+    heartbeat()
+    window.addEventListener("mousemove", touch)
+    window.addEventListener("click", touch)
+    window.addEventListener("keydown", touch)
+    const hb = setInterval(heartbeat, 30000)
+
+    const q = query(collection(db, "presence"))
+    const unsub = onSnapshot(q, (snap) => {
+      const cutoff = Date.now() - 5 * 60 * 1000
+      let active = 0
+      snap.forEach((d) => {
+        const t = d.data().lastActive
+        if (t && typeof t.toMillis === "function" && t.toMillis() >= cutoff) active++
+      })
+      setCount(active)
+    })
+
+    return () => {
+      window.removeEventListener("mousemove", touch)
+      window.removeEventListener("click", touch)
+      window.removeEventListener("keydown", touch)
+      clearInterval(hb)
+      unsub()
+      deleteDoc(ref).catch(() => {})
+    }
+  }, [user])
+
+  return count
+}
 
 export default function ClassroomView() {
   const { user, loading, logOut, isAdmin } = useAuth()
@@ -35,6 +85,8 @@ export default function ClassroomView() {
   useEffect(() => {
     setSettings(loadSettings())
   }, [])
+
+  const activeCount = useActiveCount(user)
 
   useEffect(() => {
     fetch("/api/data").then(r => r.json()).then(setData).catch(() => setData({ subjects: [] }))
@@ -132,6 +184,10 @@ export default function ClassroomView() {
         <button onClick={() => setSidebarView(sidebarView === "request" ? "subjects" : "request")} className="text-lg p-1.5 rounded-lg transition-colors hover:bg-black/5" title="Request a feature" style={{ color: "var(--c-subtle)" }}>💡</button>
         <button onClick={() => setSidebarView(sidebarView === "feedback" ? "subjects" : "feedback")} className="text-lg p-1.5 rounded-lg transition-colors hover:bg-black/5" title="Send feedback" style={{ color: "var(--c-subtle)" }}>📬</button>
         <SettingsPanel noPopup onOpen={() => setSidebarView("settings")} />
+        <div className="mt-auto mb-3 flex flex-col items-center gap-0.5" title={`${activeCount} active student${activeCount !== 1 ? "s" : ""}`}>
+          <span className={`w-2 h-2 rounded-full ${activeCount > 0 ? "bg-green-500" : "bg-gray-400"}`} />
+          <span className="text-[10px] font-medium" style={{ color: "var(--c-subtle)" }}>{activeCount}</span>
+        </div>
       </nav>
 
       <nav className="mobile-only fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around py-2 border-t" style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }}>
