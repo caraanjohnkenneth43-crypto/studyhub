@@ -72,15 +72,32 @@ export default function ChatRoom() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
 
-  const blockedWords = ["fuck", "shit", "cunt", "bitch", "asshole", "dick", "bastard"]
+  const blockedWords = [
+    "fuck", "shit", "cunt", "bitch", "asshole", "dick", "bastard",
+    "nigger", "nigga", "faggot", "fag", "retard", "rape", "pedo",
+    "whore", "slut", "pissed",
+  ]
+
+  const leetMap = { "0":"o", "1":"i", "3":"e", "4":"a", "5":"s", "7":"t", "@":"a", "$":"s", "!":"i", "z":"s" }
+
+  const normalizeWord = (w) => {
+    let n = w.toLowerCase()
+    n = n.split("").map(c => leetMap[c] || c).join("")
+    n = n.replace(/[^a-z]/g, "")
+    n = n.replace(/(.)\1+/g, "$1")
+    return n
+  }
 
   const censor = (msg) => {
-    let censored = msg
-    for (const word of blockedWords) {
-      const re = new RegExp("\\b" + word + "\\b", "gi")
-      censored = censored.replace(re, "*".repeat(word.length))
-    }
-    return censored
+    const words = msg.split(/(\s+)/)
+    return words.map(part => {
+      if (!part.trim()) return part
+      const normal = normalizeWord(part)
+      for (const bw of blockedWords) {
+        if (normal.includes(bw)) return "*".repeat(part.length)
+      }
+      return part
+    }).join("")
   }
 
   const send = async (e) => {
