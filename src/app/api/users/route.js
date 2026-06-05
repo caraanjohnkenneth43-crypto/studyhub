@@ -18,34 +18,68 @@ export async function GET() {
   } catch {}
 
   const seen = new Map()
+  const uidMap = new Map()
+
+  const upsertUser = async (uid, email, userName, timestampMs) => {
+    if (!email) return
+    if (seen.has(email)) {
+      const existing = seen.get(email)
+      if (!existing.userName && userName) existing.userName = userName
+      return
+    }
+    seen.set(email, {
+      uid: uid || email,
+      email,
+      userName: userName || email.split("@")[0],
+      createdAt: timestampMs ? new Date(timestampMs).toISOString() : undefined,
+      lastSeen: timestampMs ? new Date(timestampMs).toISOString() : undefined,
+    })
+    if (uid) uidMap.set(uid, email)
+    try {
+      const ref = doc(db, "users", uid || email)
+      const existing = await getDoc(ref)
+      if (!existing.exists()) {
+        await setDoc(ref, {
+          uid: uid || email,
+          email,
+          userName: userName || email.split("@")[0],
+          createdAt: timestampMs ? new Date(timestampMs).toISOString() : new Date().toISOString(),
+          lastSeen: timestampMs ? new Date(timestampMs).toISOString() : new Date().toISOString(),
+        })
+      }
+    } catch {}
+  }
 
   try {
     const snap = await getDocs(query(collection(db, "users"), orderBy("email", "asc")))
     snap.docs.forEach(d => {
       const data = d.data()
-      if (data.email) seen.set(data.email, { uid: d.id, ...data })
+      if (data.email) {
+        seen.set(data.email, { uid: d.id, ...data })
+        uidMap.set(d.id, data.email)
+      }
     })
   } catch {}
 
-  const addIfMissing = (email, uid, userName, timestamp) => {
-    if (!email || seen.has(email)) return
-    seen.set(email, {
-      uid: uid || email,
-      email,
-      userName: userName || email.split("@")[0],
-      createdAt: timestamp ? new Date(timestamp).toISOString() : undefined,
-      lastSeen: timestamp ? new Date(timestamp).toISOString() : undefined,
-    })
-  }
+  const uidChecked = new Set()
 
   try {
     const roomSnap = await getDocs(collection(db, "chatRooms"))
     for (const room of roomSnap.docs) {
       const msgSnap = await getDocs(query(collection(db, "chatRooms", room.id, "messages")))
-      msgSnap.forEach(d => {
+      for (const d of msgSnap.docs) {
         const data = d.data()
-        if (data.userEmail) addIfMissing(data.userEmail, data.userId, data.userName, data.timestamp?.seconds ? data.timestamp.seconds * 1000 : null)
-      })
+        const ts = data.timestamp?.seconds ? data.timestamp.seconds * 1000 : null
+        if (data.userEmail) {
+          await upsertUser(data.userId, data.userEmail, data.userName, ts)
+        } else if (data.userId && !uidChecked.has(data.userId)) {
+          uidChecked.add(data.userId)
+          if (uidMap.has(data.userId)) {
+            const email = uidMap.get(data.userId)
+            upsertUser(data.userId, email, data.userName, ts)
+          }
+        }
+      }
     }
   } catch {}
 
