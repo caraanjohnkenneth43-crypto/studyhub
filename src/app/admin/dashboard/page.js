@@ -86,7 +86,8 @@ export default function AdminDashboard() {
       setMessage("Saved!")
       setTimeout(() => setMessage(""), 2000)
     } else {
-      setMessage("Error saving.")
+      setMessage(result.error || "Error saving.")
+      setTimeout(() => setMessage(""), 5000)
     }
   }
 
@@ -222,7 +223,7 @@ export default function AdminDashboard() {
             <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: "#dbeafe", color: "#1d4ed8" }}>Beta</span>
           </div>
           <div className="flex items-center gap-4">
-            {message && <span className="text-sm font-medium" style={{ color: "#16a34a" }}>{message}</span>}
+            {message && <span className="text-sm font-medium" style={{ color: message === "Saved!" ? "#16a34a" : "#ef4444" }}>{message}</span>}
             <button onClick={() => save()} disabled={saving} className="px-5 py-2 text-white rounded-lg text-sm font-medium disabled:opacity-50 transition-colors" style={{ background: "#2563eb" }}>
               {saving ? "Saving..." : "Save Changes"}
             </button>
