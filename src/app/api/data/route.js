@@ -2,11 +2,15 @@ import { db } from "@/lib/firebase"
 import { doc, getDoc, setDoc } from "firebase/firestore"
 
 export async function GET() {
-  const snap = await getDoc(doc(db, "app", "data"))
-  if (!snap.exists()) {
-    return Response.json({ subjects: [] })
+  try {
+    const snap = await getDoc(doc(db, "app", "data"))
+    if (!snap.exists()) {
+      return Response.json({ subjects: [] })
+    }
+    return Response.json(snap.data())
+  } catch (e) {
+    return Response.json({ subjects: [], error: e.message }, { status: 500 })
   }
-  return Response.json(snap.data())
 }
 
 export async function PUT(request) {
