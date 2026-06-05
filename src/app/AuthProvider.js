@@ -52,6 +52,18 @@ export function AuthProvider({ children }) {
 
   const signUp = (email, password) => createUserWithEmailAndPassword(auth, email, password)
   const logIn = (email, password) => signInWithEmailAndPassword(auth, email, password)
+
+  const devLogIn = (email) => {
+    if (!isDev) return
+    const u = { email, uid: email.replace(/[^a-z0-9]/gi, "-") }
+    setUser(u)
+    fetch("/api/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ uid: u.uid, email: u.email }),
+    }).catch(() => {})
+  }
+
   const logOut = () => {
     if (isDev) { setUser(null); return }
     return signOut(auth)
@@ -60,7 +72,7 @@ export function AuthProvider({ children }) {
   const isAdmin = user && allowedAdmins.includes(user.email)
 
   return (
-    <AuthContext.Provider value={{ user, loading, signUp, logIn, logOut, isAdmin }}>
+    <AuthContext.Provider value={{ user, loading, signUp, logIn, devLogIn, logOut, isAdmin }}>
       {children}
     </AuthContext.Provider>
   )
