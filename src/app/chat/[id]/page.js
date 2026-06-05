@@ -9,6 +9,7 @@ import { useActiveRoom } from "@/app/ChatNotificationProvider"
 import { COLORS } from "@/lib/constants"
 import { useRoom, useMessages, useUserMap, useAutoScroll, useScrollDetection, useSendMessage, useDeleteRoom, useBlockUser } from "@/lib/chat/hooks"
 import { resolveMessageEmail, getMessageNameStyle } from "@/lib/chat/gradients"
+import { savePassword } from "@/lib/chat/password"
 import { isBlocked } from "@/lib/chat/moderation"
 
 export default function ChatRoom() {
@@ -16,6 +17,8 @@ export default function ChatRoom() {
   const { user, loading, logOut } = useAuth()
   const router = useRouter()
   const [text, setText] = useState("")
+  const [password, setPassword] = useState("")
+  const [passwordError, setPasswordError] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [showBlockPanel, setShowBlockPanel] = useState(false)
   const [blockEmail, setBlockEmail] = useState("")
@@ -23,7 +26,7 @@ export default function ChatRoom() {
   const messagesRef = useRef(null)
   const { setActiveRoom } = useActiveRoom()
 
-  const { room, setRoom, verified, roomLoaded } = useRoom(id)
+  const { room, setRoom, verified, setVerified, roomLoaded } = useRoom(id)
   const messages = useMessages(id, verified)
   const { contributors, uidToEmail } = useUserMap()
   useAutoScroll(messages, bottomRef)
@@ -40,6 +43,16 @@ export default function ChatRoom() {
     setActiveRoom?.(verified ? id : null)
     return () => setActiveRoom?.(null)
   }, [verified, id, setActiveRoom])
+
+  const checkPassword = () => {
+    if (password === room.password) {
+      setVerified(true)
+      setPasswordError(false)
+      savePassword(id, password)
+    } else {
+      setPasswordError(true)
+    }
+  }
 
   if (loading || !user) {
     return (
@@ -72,6 +85,28 @@ export default function ChatRoom() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "var(--c-bg)" }}>
+      {room && room.type === "private" && !verified && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.5)" }}>
+          <div className="rounded-xl border shadow-xl p-6 w-full max-w-sm mx-4" style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }}>
+            <h2 className="text-lg font-semibold mb-1" style={{ color: "var(--c-fg)" }}>🔒 Private Room</h2>
+            <p className="text-sm mb-4" style={{ color: "var(--c-muted)" }}>Enter the room password to join.</p>
+            <input
+              value={password}
+              onChange={e => { setPassword(e.target.value); setPasswordError(false) }}
+              type="password"
+              placeholder="Room password"
+              autoComplete="new-password"
+              data-1p-ignore
+              data-lpignore="true"
+              onKeyDown={e => e.key === "Enter" && checkPassword()}
+              className="w-full px-3 py-2 rounded-lg text-sm border mb-2"
+              style={{ background: "var(--c-bg)", borderColor: passwordError ? COLORS.RED : "var(--c-border)", color: "var(--c-fg)" }}
+            />
+            {passwordError && <p className="text-xs mb-2" style={{ color: COLORS.RED }}>Incorrect password.</p>}
+            <button onClick={checkPassword} disabled={!password.trim()} className="w-full py-2 text-white rounded-lg text-sm font-medium disabled:opacity-50" style={{ background: COLORS.BLUE_BG }}>Join Room</button>
+          </div>
+        </div>
+      )}
       <header style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }} className="border-b sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
