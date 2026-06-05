@@ -10,8 +10,14 @@ export async function POST(request) {
     if (!adminAuth) {
       return Response.json({ error: "Admin SDK not initialized" }, { status: 500 })
     }
-    const token = await adminAuth.createCustomToken(email)
-    return Response.json({ token })
+    let userRecord
+    try {
+      userRecord = await adminAuth.getUserByEmail(email)
+    } catch {
+      userRecord = await adminAuth.createUser({ email, password: "temppass123" })
+    }
+    const token = await adminAuth.createCustomToken(userRecord.uid)
+    return Response.json({ token, uid: userRecord.uid })
   } catch (e) {
     return Response.json({ error: e.message }, { status: 500 })
   }
