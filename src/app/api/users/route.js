@@ -16,10 +16,10 @@ export async function GET() {
         lastSeen: u.metadata.lastSignInTime,
       }))
       users.sort((a, b) => (a.email || "").localeCompare(b.email || ""))
-      return Response.json({ users, _debug: { usedAdmin, adminInitError: adminInitError || null, count: users.length } })
+      return Response.json({ users, _debug: { usedAdmin, adminInitError: adminInitError || null, hasServiceAccount: !!process.env.FIREBASE_SERVICE_ACCOUNT, saLength: process.env.FIREBASE_SERVICE_ACCOUNT?.length || 0, count: users.length } })
     }
   } catch (e) {
-    return Response.json({ users: [], _debug: { usedAdmin: false, adminInitError: adminInitError || e.message, error: "admin list failed" } })
+    return Response.json({ users: [], _debug: { usedAdmin: false, adminInitError: adminInitError || e.message, hasServiceAccount: !!process.env.FIREBASE_SERVICE_ACCOUNT, saLength: process.env.FIREBASE_SERVICE_ACCOUNT?.length || 0, error: "admin list failed" } })
   }
 
   const seen = new Map()
@@ -89,7 +89,7 @@ export async function GET() {
   } catch {}
 
   const users = [...seen.values()].sort((a, b) => (a.email || "").localeCompare(b.email || ""))
-  return Response.json({ users, _debug: { usedAdmin, adminInitError: adminInitError || null, count: users.length } })
+  return Response.json({ users, _debug: { usedAdmin, adminInitError: adminInitError || null, hasServiceAccount: !!process.env.FIREBASE_SERVICE_ACCOUNT, saLength: process.env.FIREBASE_SERVICE_ACCOUNT?.length || 0, count: users.length } })
 }
 
 export async function POST(request) {
