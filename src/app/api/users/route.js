@@ -1,10 +1,13 @@
-import { adminAuth } from "@/lib/firebase-admin"
+import { adminAuth, initError as adminInitError } from "@/lib/firebase-admin"
 import { db } from "@/lib/firebase"
 import { collection, getDocs, query, orderBy, getDoc, doc, setDoc } from "firebase/firestore"
 
 export async function GET() {
+  let usedAdmin = false
+
   try {
     if (adminAuth) {
+      usedAdmin = true
       const list = await adminAuth.listUsers()
       const users = list.users.map(u => ({
         uid: u.uid,
@@ -13,9 +16,11 @@ export async function GET() {
         lastSeen: u.metadata.lastSignInTime,
       }))
       users.sort((a, b) => (a.email || "").localeCompare(b.email || ""))
-      return Response.json(users)
+      return Response.json({ users, _debug: { usedAdmin, adminInitError: adminInitError || null, count: users.length } })
     }
-  } catch {}
+  } catch (e) {
+    return Response.json({ users: [], _debug: { usedAdmin: false, adminInitError: adminInitError || e.message, error: "admin list failed" } })
+  }
 
   const seen = new Map()
   const uidMap = new Map()
@@ -84,7 +89,7 @@ export async function GET() {
   } catch {}
 
   const users = [...seen.values()].sort((a, b) => (a.email || "").localeCompare(b.email || ""))
-  return Response.json(users)
+  return Response.json({ users, _debug: { usedAdmin, adminInitError: adminInitError || null, count: users.length } })
 }
 
 export async function POST(request) {

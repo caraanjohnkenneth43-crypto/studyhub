@@ -27,6 +27,7 @@ export default function AdminDashboard() {
   const [infoSections, setInfoSections] = useState([])
   const [contributorInput, setContributorInput] = useState("")
   const [users, setUsers] = useState([])
+  const [debugInfo, setDebugInfo] = useState(null)
   const [fontSizeOpen, setFontSizeOpen] = useState(null)
   const [fontSizeValue, setFontSizeValue] = useState(16)
   const [headingOpen, setHeadingOpen] = useState(null)
@@ -67,7 +68,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (tab === "feedback") fetch("/api/feedback").then(r => r.json()).then(setFeedback)
     if (tab === "requests") fetch("/api/request").then(r => r.json()).then(setRequests)
-    if (tab === "users") fetch("/api/users").then(r => r.json()).then(setUsers)
+    if (tab === "users") fetch("/api/users").then(r => r.json()).then(data => { setUsers(data.users || data); setDebugInfo(data._debug || null) })
   }, [tab])
 
   const save = async (newData) => {
@@ -393,7 +394,14 @@ export default function AdminDashboard() {
           <div className="flex-1 p-6 max-w-2xl">
             <h2 className="text-lg font-semibold mb-1" style={{ color: "var(--c-fg)" }}>👤 All Users</h2>
             <p className="text-sm mb-4" style={{ color: "var(--c-muted)" }}>Every registered Firebase Auth user.</p>
-            <button onClick={() => fetch("/api/users").then(r => r.json()).then(setUsers)} className="text-sm mb-4" style={{ color: "#2563eb" }}>↻ Refresh</button>
+            <div className="flex items-center gap-3 mb-4">
+              <button onClick={() => fetch("/api/users").then(r => r.json()).then(data => { setUsers(data.users || data); setDebugInfo(data._debug || null) })} className="text-sm" style={{ color: "#2563eb" }}>↻ Refresh</button>
+              {debugInfo && (
+                <span className="text-xs" style={{ color: debugInfo.usedAdmin ? "#16a34a" : "#d97706" }}>
+                  {debugInfo.usedAdmin ? "✓ Admin SDK" : debugInfo.adminInitError ? `✗ Admin SDK error: ${debugInfo.adminInitError}` : "○ Fallback (no Admin SDK env vars)"}
+                </span>
+              )}
+            </div>
             {users.length === 0 ? (
               <p className="text-sm" style={{ color: "var(--c-subtle)" }}>No users found.</p>
             ) : (
