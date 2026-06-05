@@ -283,20 +283,18 @@ export default function ChatRoom() {
           {messages.map(msg => {
             const email = msg.userEmail || uidToEmail[msg.userId]
             const isOwn = msg.userId === user.uid
-            const isAdmin = !isOwn && email && allowedAdmins.includes(email)
-            const isContributor = !isOwn && email && !isAdmin && contributors.includes(email)
+            const isAdmin = email && allowedAdmins.includes(email)
+            const isContributor = email && !isAdmin && contributors.includes(email)
             if (msg.id === messages[0]?.id) console.log("[chat] render msg:", { id: msg.id, userId: msg.userId, userEmail: msg.userEmail, resolvedEmail: email, isAdmin, isContributor, uidToEmailKeys: Object.keys(uidToEmail), contributors })
             return (
             <div key={msg.id} className="flex gap-2 px-2 min-w-0">
               <span className={`text-xs font-medium shrink-0 mt-0.5 ${(() => {
-                if (isOwn) return ""
                 if (isAdmin) return "font-bold bg-gradient-to-r from-gray-700 via-gray-300 to-white bg-clip-text text-transparent"
                 if (isContributor) return "font-bold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent"
                 return ""
               })()}`} style={{ color: (() => {
-                if (isOwn) return "#3b82f6"
                 if (isAdmin || isContributor) return undefined
-                return "var(--c-fg)"
+                return isOwn ? "#3b82f6" : "var(--c-fg)"
               })() }}>
                 {msg.userName || "Anonymous"}:
               </span>
