@@ -13,7 +13,7 @@ export default function ChatPage() {
   const router = useRouter()
   const [rooms, setRooms] = useState([])
   const [showCreate, setShowCreate] = useState(false)
-  const [newRoom, setNewRoom] = useState({ name: "", description: "", topic: "", type: "public", password: "" })
+  const [newRoom, setNewRoom] = useState({ name: "", description: "", topic: "" })
   const [roomsLoaded, setRoomsLoaded] = useState(false)
 
   useEffect(() => {
@@ -49,13 +49,12 @@ export default function ChatPage() {
       name: newRoom.name.trim(),
       description: newRoom.description.trim(),
       topic: newRoom.topic.trim(),
-      type: newRoom.type,
-      password: newRoom.type === "private" ? newRoom.password.trim() : "",
+      type: "public",
       createdBy: user.uid,
       createdByName: user.email,
       createdAt: serverTimestamp(),
     })
-    setNewRoom({ name: "", description: "", topic: "", type: "public", password: "" })
+    setNewRoom({ name: "", description: "", topic: "" })
     setShowCreate(false)
   }
 
@@ -106,7 +105,7 @@ export default function ChatPage() {
                     className="block px-2 py-1.5 rounded-lg text-sm transition-colors"
                     style={{ color: "var(--c-fg)" }}
                   >
-                    <span className="font-medium">{room.type === "private" ? "🔒 " : "# "}{room.name}</span>
+                    <span className="font-medium"># {room.name}</span>
                     {room.description && (
                       <p className="text-xs truncate" style={{ color: "var(--c-subtle)" }}>{room.description}</p>
                     )}
@@ -134,19 +133,6 @@ export default function ChatPage() {
                   <label className="text-xs block mb-1" style={{ color: "var(--c-muted)" }}>Topic</label>
                   <input value={newRoom.topic} onChange={e => setNewRoom({ ...newRoom, topic: e.target.value })} placeholder="e.g. Science, Homework Help" className="w-full px-2 py-1.5 rounded-lg text-sm border" style={{ background: "var(--c-bg)", borderColor: "var(--c-border)", color: "var(--c-fg)" }} />
                 </div>
-                <div>
-                  <label className="text-xs block mb-1" style={{ color: "var(--c-muted)" }}>Type</label>
-                  <select value={newRoom.type} onChange={e => setNewRoom({ ...newRoom, type: e.target.value, password: "" })} className="w-full px-2 py-1.5 rounded-lg text-sm border" style={{ background: "var(--c-bg)", borderColor: "var(--c-border)", color: "var(--c-fg)" }}>
-                    <option value="public">Public</option>
-                    <option value="private">Private</option>
-                  </select>
-                </div>
-                {newRoom.type === "private" && (
-                  <div>
-                    <label className="text-xs block mb-1" style={{ color: "var(--c-muted)" }}>Temporary Password</label>
-                    <input value={newRoom.password} onChange={e => setNewRoom({ ...newRoom, password: e.target.value })} type="password" placeholder="Set a room password" required className="w-full px-2 py-1.5 rounded-lg text-sm border" style={{ background: "var(--c-bg)", borderColor: "var(--c-border)", color: "var(--c-fg)" }} />
-                  </div>
-                )}
                 <div className="flex gap-2 pt-2">
                   <button type="submit" className="px-4 py-1.5 text-white rounded-lg text-sm font-medium" style={{ background: "#2563eb" }}>Create</button>
                   <button type="button" onClick={() => setShowCreate(false)} className="px-4 py-1.5 rounded-lg text-sm" style={{ color: "var(--c-subtle)" }}>Cancel</button>

@@ -8,34 +8,23 @@ import { doc, getDoc, deleteDoc, collection, query, orderBy, onSnapshot, addDoc,
 import { db } from "@/lib/firebase"
 import { containsProfanity, censorMessage } from "@/lib/profanity"
 import { buildUidToEmailMap } from "@/lib/chat/gradients"
-import { hasStoredPassword } from "@/lib/chat/password"
 
 /**
- * Load room document and determine if user is verified (public or has password).
+ * Load room document.
  */
 export function useRoom(id) {
   const [room, setRoom] = useState(null)
-  const [verified, setVerified] = useState(false)
   const [roomLoaded, setRoomLoaded] = useState(false)
 
   useEffect(() => {
     const ref = doc(db, "chatRooms", id)
     getDoc(ref).then(snap => {
-      if (snap.exists()) {
-        const data = { id: snap.id, ...snap.data() }
-        setRoom(data)
-        if (data.type === "public") {
-          setVerified(true)
-        } else {
-          const stored = hasStoredPassword(id)
-          if (stored === data.password) setVerified(true)
-        }
-      }
+      if (snap.exists()) setRoom({ id: snap.id, ...snap.data() })
       setRoomLoaded(true)
     })
   }, [id])
 
-  return { room, setRoom, verified, setVerified, roomLoaded }
+  return { room, setRoom, verified: true, roomLoaded }
 }
 
 /**
