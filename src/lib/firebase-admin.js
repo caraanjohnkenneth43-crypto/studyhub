@@ -33,4 +33,6 @@ try {
   }
 }
 
-export { adminAuth, initError }
+const adminDB = admin.apps.length ? admin.firestore() : null
+
+export { adminAuth, adminDB, initError }

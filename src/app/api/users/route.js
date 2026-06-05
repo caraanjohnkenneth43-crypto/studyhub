@@ -1,6 +1,4 @@
-import { adminAuth, initError as adminInitError } from "@/lib/firebase-admin"
-import { db } from "@/lib/firebase"
-import { collection, getDocs, query, orderBy, getDoc, doc, setDoc } from "firebase/firestore"
+import { adminAuth, adminDB, initError as adminInitError } from "@/lib/firebase-admin"
 
 export async function GET() {
   let usedAdmin = false
@@ -41,10 +39,10 @@ export async function GET() {
     })
     if (uid) uidMap.set(uid, email)
     try {
-      const ref = doc(db, "users", uid || email)
-      const existing = await getDoc(ref)
-      if (!existing.exists()) {
-        await setDoc(ref, {
+      const ref = adminDB.collection("users").doc(uid || email)
+      const existing = await ref.get()
+      if (!existing.exists) {
+        await ref.set({
           uid: uid || email,
           email,
           userName: userName || email.split("@")[0],
@@ -56,7 +54,7 @@ export async function GET() {
   }
 
   try {
-    const snap = await getDocs(query(collection(db, "users"), orderBy("email", "asc")))
+    const snap = await adminDB.collection("users").orderBy("email", "asc").get()
     snap.docs.forEach(d => {
       const data = d.data()
       if (data.email) {
@@ -69,9 +67,9 @@ export async function GET() {
   const uidChecked = new Set()
 
   try {
-    const roomSnap = await getDocs(collection(db, "chatRooms"))
+    const roomSnap = await adminDB.collection("chatRooms").get()
     for (const room of roomSnap.docs) {
-      const msgSnap = await getDocs(query(collection(db, "chatRooms", room.id, "messages")))
+      const msgSnap = await adminDB.collection("chatRooms").doc(room.id).collection("messages").get()
       for (const d of msgSnap.docs) {
         const data = d.data()
         const ts = data.timestamp?.seconds ? data.timestamp.seconds * 1000 : null
@@ -98,17 +96,17 @@ export async function POST(request) {
     if (!uid || !email) {
       return Response.json({ success: false, error: "uid and email required" }, { status: 400 })
     }
-    const ref = doc(db, "users", uid)
-    const existing = await getDoc(ref)
-    if (!existing.exists()) {
-      await setDoc(ref, {
+    const ref = adminDB.collection("users").doc(uid)
+    const existing = await ref.get()
+    if (!existing.exists) {
+      await ref.set({
         uid,
         email,
         createdAt: new Date().toISOString(),
         lastSeen: new Date().toISOString(),
       })
     } else {
-      await setDoc(ref, { lastSeen: new Date().toISOString() }, { merge: true })
+      await ref.set({ lastSeen: new Date().toISOString() }, { merge: true })
     }
     return Response.json({ success: true })
   } catch (e) {

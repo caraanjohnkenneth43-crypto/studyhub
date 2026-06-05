@@ -1,5 +1,4 @@
-import { db } from "@/lib/firebase"
-import { collection, addDoc, getDocs, query, orderBy } from "firebase/firestore"
+import { adminDB } from "@/lib/firebase-admin"
 
 export async function POST(request) {
   try {
@@ -7,7 +6,7 @@ export async function POST(request) {
     if (!message || typeof message !== "string" || !message.trim()) {
       return Response.json({ success: false, error: "Message is required" }, { status: 400 })
     }
-    await addDoc(collection(db, "requests"), {
+    await adminDB.collection("requests").add({
       name: typeof name === "string" && name.trim() ? name.trim() : "Anonymous",
       message: message.trim(),
       subjectId: subjectId || "",
@@ -25,8 +24,7 @@ export async function POST(request) {
 
 export async function GET() {
   try {
-    const q = query(collection(db, "requests"), orderBy("timestamp", "desc"))
-    const snap = await getDocs(q)
+    const snap = await adminDB.collection("requests").orderBy("timestamp", "desc").get()
     const requests = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
     return Response.json(requests)
   } catch (e) {

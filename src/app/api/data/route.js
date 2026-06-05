@@ -1,13 +1,12 @@
-import { db } from "@/lib/firebase"
-import { doc, getDoc, setDoc } from "firebase/firestore"
+import { adminDB } from "@/lib/firebase-admin"
 
 export async function GET() {
   try {
-    const snap = await getDoc(doc(db, "app", "data"))
-    if (!snap.exists()) {
+    const snap = await adminDB.collection("app").doc("data").get()
+    if (!snap.exists) {
       return Response.json({ subjects: [] })
     }
-    return Response.json(snap.data())
+    return Response.json({ ...snap.data(), _db: "admin" })
   } catch (e) {
     return Response.json({ subjects: [], error: e.message }, { status: 500 })
   }
@@ -22,7 +21,7 @@ export async function PUT(request) {
     if (!Array.isArray(body.subjects)) {
       body.subjects = []
     }
-    await setDoc(doc(db, "app", "data"), body)
+    await adminDB.collection("app").doc("data").set(body)
     return Response.json({ success: true })
   } catch (e) {
     return Response.json({ success: false, error: e.message }, { status: 400 })
