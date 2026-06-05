@@ -7,7 +7,7 @@ import { ADMIN_EMAILS } from "@/lib/constants"
 
 const AuthContext = createContext(null)
 
-export { ADMIN_EMAILS as allowedAdmins }
+export const allowedAdmins = ADMIN_EMAILS
 
 const isDev = typeof window !== "undefined" &&
   (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
