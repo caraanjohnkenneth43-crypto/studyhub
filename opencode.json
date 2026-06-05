@@ -1,6 +1,23 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "instructions": ["AGENTS.md"],
+  "agent": {
+    "chat": {
+      "prompt": "You are a chat system specialist. Read AGENTS-chat.md and AGENTS-firebase.md for full context.",
+      "description": "Chat system specialist — messages, passwords, moderation, notifications",
+      "hidden": false
+    },
+    "admin": {
+      "prompt": "You are an admin panel specialist. Read AGENTS-admin.md and AGENTS-firebase.md for full context.",
+      "description": "Admin panel specialist — CRUD, contributors, users, feedback",
+      "hidden": false
+    },
+    "security": {
+      "prompt": "You are a security specialist. Read AGENTS-firebase.md and AGENTS-database.md for full context.",
+      "description": "Security & infrastructure — Firestore rules, Auth, env vars",
+      "hidden": false
+    }
+  },
   "mcp": {
     "refero": {
       "type": "remote",

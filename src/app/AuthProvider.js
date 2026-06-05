@@ -3,10 +3,11 @@
 import { createContext, useContext, useState, useEffect, useRef } from "react"
 import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "firebase/auth"
 import { auth } from "@/lib/firebase"
+import { ADMIN_EMAILS } from "@/lib/constants"
 
 const AuthContext = createContext(null)
 
-export const allowedAdmins = ["john.caraan@student.nhsau64.gov", "dev@studyhub.local"]
+export { ADMIN_EMAILS as allowedAdmins }
 
 const isDev = typeof window !== "undefined" &&
   (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")

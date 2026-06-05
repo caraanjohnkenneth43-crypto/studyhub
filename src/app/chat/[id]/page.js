@@ -6,158 +6,52 @@ import Link from "next/link"
 import { useAuth, allowedAdmins } from "@/app/AuthProvider"
 import SettingsPanel from "@/app/SettingsPanel"
 import { useActiveRoom } from "@/app/ChatNotificationProvider"
-import { db } from "@/lib/firebase"
-import { censorMessage, containsProfanity } from "@/lib/profanity"
-import { doc, getDoc, deleteDoc, updateDoc, collection, query, orderBy, onSnapshot, getDocs, addDoc, serverTimestamp, limit } from "firebase/firestore"
+import { COLORS } from "@/lib/constants"
+import { useRoom, useMessages, useUserMap, useAutoScroll, useScrollDetection, useSendMessage, useDeleteRoom, useBlockUser } from "@/lib/chat/hooks"
+import { resolveMessageEmail, getMessageNameStyle } from "@/lib/chat/gradients"
+import { savePassword } from "@/lib/chat/password"
+import { isBlocked } from "@/lib/chat/moderation"
 
 export default function ChatRoom() {
   const { id } = useParams()
   const { user, loading, logOut } = useAuth()
   const router = useRouter()
-  const [room, setRoom] = useState(null)
-  const [messages, setMessages] = useState([])
   const [text, setText] = useState("")
   const [password, setPassword] = useState("")
   const [passwordError, setPasswordError] = useState(false)
-  const [verified, setVerified] = useState(false)
-  const [roomLoaded, setRoomLoaded] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
-  const [showScrollBtn, setShowScrollBtn] = useState(false)
   const [showBlockPanel, setShowBlockPanel] = useState(false)
   const [blockEmail, setBlockEmail] = useState("")
-  const [contributors, setContributors] = useState([])
-  const [uidToEmail, setUidToEmail] = useState({})
   const bottomRef = useRef(null)
   const messagesRef = useRef(null)
   const { setActiveRoom } = useActiveRoom()
+
+  const { room, setRoom, verified, setVerified, roomLoaded } = useRoom(id)
+  const messages = useMessages(id, verified)
+  const { contributors, uidToEmail } = useUserMap()
+  useAutoScroll(messages, bottomRef)
+  const showScrollBtn = useScrollDetection(messagesRef)
+  const send = useSendMessage(id, user, text, setText)
+  const deleteRoom = useDeleteRoom(id, router)
+  const { blockUser, unblockUser } = useBlockUser(room, setRoom)
 
   useEffect(() => {
     if (!loading && !user) router.push("/login")
   }, [user, loading, router])
 
   useEffect(() => {
-    const ref = doc(db, "chatRooms", id)
-    getDoc(ref).then(snap => {
-      if (snap.exists()) {
-        const data = { id: snap.id, ...snap.data() }
-        setRoom(data)
-        if (data.type === "public") {
-          setVerified(true)
-        } else {
-          try {
-            const stored = JSON.parse(localStorage.getItem("chat-passwords") || "{}")
-            if (stored[id] === data.password) setVerified(true)
-          } catch {}
-        }
-      }
-      setRoomLoaded(true)
-    })
-  }, [id])
-
-  useEffect(() => {
     setActiveRoom?.(verified ? id : null)
     return () => setActiveRoom?.(null)
   }, [verified, id, setActiveRoom])
-
-  useEffect(() => {
-    if (!verified) return
-    const q = query(collection(db, "chatRooms", id, "messages"), orderBy("timestamp", "asc"), limit(200))
-    const unsub = onSnapshot(q, (snap) => {
-      const clean = []
-      snap.docs.forEach(d => {
-        if (containsProfanity(d.data().text || "")) {
-          deleteDoc(doc(db, "chatRooms", id, "messages", d.id))
-        } else {
-          clean.push({ id: d.id, ...d.data() })
-        }
-      })
-      setMessages(clean)
-    })
-    return unsub
-  }, [id, verified])
-
-  useEffect(() => {
-    fetch("/api/data").then(r => r.json()).then(d => { setContributors(d.contributors || []); console.log("[chat] contributors from /api/data:", d.contributors) }).catch(e => console.warn("[chat] failed to fetch contributors:", e))
-
-    const loadMap = async () => {
-      const map = {}
-      try {
-        const r = await fetch("/api/users")
-        const d = await r.json()
-        ;(d.users || []).forEach(u => { if (u.uid && u.email) map[u.uid] = u.email })
-        console.log("[chat] /api/users returned", d.users?.length, "users")
-      } catch (e) { console.warn("[chat] /api/users fetch failed:", e) }
-      try {
-        const snap = await getDocs(collection(db, "users"))
-        snap.forEach(d => {
-          const data = d.data()
-          if (data.uid && data.email) map[data.uid] = data.email
-        })
-        console.log("[chat] firestore users collection returned", snap.docs.length, "docs")
-      } catch (e) { console.warn("[chat] firestore users query failed:", e) }
-      console.log("[chat] final uidToEmail map:", Object.keys(map).length, "entries", map)
-      setUidToEmail(map)
-    }
-    loadMap()
-  }, [])
 
   const checkPassword = () => {
     if (password === room.password) {
       setVerified(true)
       setPasswordError(false)
-      try {
-        const stored = JSON.parse(localStorage.getItem("chat-passwords") || "{}")
-        stored[id] = password
-        localStorage.setItem("chat-passwords", JSON.stringify(stored))
-      } catch {}
+      savePassword(id, password)
     } else {
       setPasswordError(true)
     }
-  }
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages])
-
-  useEffect(() => {
-    const el = messagesRef.current
-    if (!el) return
-    const onScroll = () => {
-      const { scrollHeight, scrollTop, clientHeight } = el
-      setShowScrollBtn(scrollHeight - scrollTop - clientHeight >= 100)
-    }
-    el.addEventListener("scroll", onScroll)
-    return () => el.removeEventListener("scroll", onScroll)
-  }, [])
-
-  const send = async (e) => {
-    e.preventDefault()
-    if (!text.trim()) return
-    await addDoc(collection(db, "chatRooms", id, "messages"), {
-      userId: user.uid,
-      userName: user.email.split("@")[0],
-      userEmail: user.email,
-      text: censorMessage(text.trim()),
-      timestamp: serverTimestamp(),
-    })
-    setText("")
-  }
-
-  const deleteRoom = async () => {
-    await deleteDoc(doc(db, "chatRooms", id))
-    router.push("/chat")
-  }
-
-  const blockUser = async () => {
-    if (!blockEmail.trim()) return
-    await updateDoc(doc(db, "chatRooms", id), { blocked: [...(room.blocked || []), blockEmail.trim()] })
-    setRoom(prev => ({ ...prev, blocked: [...(prev.blocked || []), blockEmail.trim()] }))
-    setBlockEmail("")
-  }
-
-  const unblockUser = async (email) => {
-    await updateDoc(doc(db, "chatRooms", id), { blocked: (room.blocked || []).filter(e => e !== email) })
-    setRoom(prev => ({ ...prev, blocked: (prev.blocked || []).filter(e => e !== email) }))
   }
 
   if (loading || !user) {
@@ -172,18 +66,18 @@ export default function ChatRoom() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center" style={{ background: "var(--c-bg)", color: "var(--c-subtle)" }}>
         <p className="text-lg">Room not found.</p>
-        <Link href="/chat" className="text-sm underline mt-2" style={{ color: "#3b82f6" }}>Back to chat</Link>
+        <Link href="/chat" className="text-sm underline mt-2" style={{ color: COLORS.BLUE }}>Back to chat</Link>
       </div>
     )
   }
 
-  if (room && room.blocked?.includes(user.email)) {
+  if (isBlocked(room, user.email)) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--c-bg)" }}>
         <div className="rounded-xl border shadow-xl p-6 w-full max-w-sm mx-4 text-center" style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }}>
           <h2 className="text-lg font-semibold mb-2" style={{ color: "var(--c-fg)" }}>🔒 Access Revoked</h2>
-          <p className="text-sm mb-4" style={{ color: "var(--c-muted)" }}>You've been removed from this room by the owner.</p>
-          <Link href="/chat" className="text-sm underline" style={{ color: "#3b82f6" }}>Back to chat</Link>
+          <p className="text-sm mb-4" style={{ color: "var(--c-muted)" }}>You&apos;ve been removed from this room by the owner.</p>
+          <Link href="/chat" className="text-sm underline" style={{ color: COLORS.BLUE }}>Back to chat</Link>
         </div>
       </div>
     )
@@ -205,10 +99,10 @@ export default function ChatRoom() {
             data-lpignore="true"
             onKeyDown={e => e.key === "Enter" && checkPassword()}
             className="w-full px-3 py-2 rounded-lg text-sm border mb-2"
-            style={{ background: "var(--c-bg)", borderColor: passwordError ? "#ef4444" : "var(--c-border)", color: "var(--c-fg)" }}
+            style={{ background: "var(--c-bg)", borderColor: passwordError ? COLORS.RED : "var(--c-border)", color: "var(--c-fg)" }}
           />
-          {passwordError && <p className="text-xs mb-2" style={{ color: "#ef4444" }}>Incorrect password.</p>}
-          <button onClick={checkPassword} disabled={!password.trim()} className="w-full py-2 text-white rounded-lg text-sm font-medium disabled:opacity-50" style={{ background: "#2563eb" }}>Join Room</button>
+          {passwordError && <p className="text-xs mb-2" style={{ color: COLORS.RED }}>Incorrect password.</p>}
+          <button onClick={checkPassword} disabled={!password.trim()} className="w-full py-2 text-white rounded-lg text-sm font-medium disabled:opacity-50" style={{ background: COLORS.BLUE_BG }}>Join Room</button>
         </div>
       </div>
     )
@@ -226,11 +120,11 @@ export default function ChatRoom() {
           <div className="flex items-center gap-3">
             <span className="text-xs hidden sm:inline" style={{ color: "var(--c-subtle)" }}>{user.email}</span>
             {room && room.createdBy === user.uid && !confirmDelete && (
-              <button onClick={() => setConfirmDelete(true)} className="text-xs" style={{ color: "#ef4444" }}>Delete room</button>
+              <button onClick={() => setConfirmDelete(true)} className="text-xs" style={{ color: COLORS.RED }}>Delete room</button>
             )}
             {room && room.createdBy === user.uid && confirmDelete && (
               <span className="flex items-center gap-2">
-                <button onClick={deleteRoom} className="text-xs font-semibold" style={{ color: "#ef4444" }}>Confirm</button>
+                <button onClick={deleteRoom} className="text-xs font-semibold" style={{ color: COLORS.RED }}>Confirm</button>
                 <button onClick={() => setConfirmDelete(false)} className="text-xs" style={{ color: "var(--c-subtle)" }}>Cancel</button>
               </span>
             )}
@@ -254,7 +148,7 @@ export default function ChatRoom() {
                 {(room.blocked || []).map(email => (
                   <div key={email} className="flex items-center justify-between gap-2">
                     <span className="text-xs truncate" style={{ color: "var(--c-muted)" }}>{email}</span>
-                    <button onClick={() => unblockUser(email)} className="text-xs shrink-0" style={{ color: "#3b82f6" }}>Unblock</button>
+                    <button onClick={() => unblockUser(email)} className="text-xs shrink-0" style={{ color: COLORS.BLUE }}>Unblock</button>
                   </div>
                 ))}
               </div>
@@ -267,7 +161,7 @@ export default function ChatRoom() {
                 className="flex-1 px-2 py-1 rounded text-xs border"
                 style={{ background: "var(--c-bg)", borderColor: "var(--c-border)", color: "var(--c-fg)" }}
               />
-              <button onClick={blockUser} disabled={!blockEmail.trim()} className="px-2 py-1 text-white rounded text-xs font-medium disabled:opacity-50" style={{ background: "#ef4444" }}>Block</button>
+              <button onClick={() => { blockUser(blockEmail); setBlockEmail("") }} disabled={!blockEmail.trim()} className="px-2 py-1 text-white rounded text-xs font-medium disabled:opacity-50" style={{ background: COLORS.RED }}>Block</button>
             </div>
           </div>
         </div>
@@ -281,21 +175,12 @@ export default function ChatRoom() {
             </div>
           )}
           {messages.map(msg => {
-            const email = msg.userEmail || uidToEmail[msg.userId]
+            const email = resolveMessageEmail(msg, uidToEmail)
             const isOwn = msg.userId === user.uid
-            const isAdmin = email && allowedAdmins.includes(email)
-            const isContributor = email && !isAdmin && contributors.includes(email)
-            if (msg.id === messages[0]?.id) console.log("[chat] render msg:", { id: msg.id, userId: msg.userId, userEmail: msg.userEmail, resolvedEmail: email, isAdmin, isContributor, uidToEmailKeys: Object.keys(uidToEmail), contributors })
+            const { className, styleColor } = getMessageNameStyle(email, isOwn, allowedAdmins, contributors)
             return (
             <div key={msg.id} className="flex gap-2 px-2 min-w-0">
-              <span className={`text-xs font-medium shrink-0 mt-0.5 ${(() => {
-                if (isAdmin) return "font-bold bg-gradient-to-r from-gray-700 via-gray-300 to-white bg-clip-text text-transparent"
-                if (isContributor) return "font-bold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent"
-                return ""
-              })()}`} style={{ color: (() => {
-                if (isAdmin || isContributor) return undefined
-                return isOwn ? "#3b82f6" : "var(--c-fg)"
-              })() }}>
+              <span className={`text-xs font-medium shrink-0 mt-0.5 ${className}`} style={{ color: styleColor }}>
                 {msg.userName || "Anonymous"}:
               </span>
               <span className="text-xs break-words" style={{ color: "var(--c-muted)", overflowWrap: "anywhere", wordBreak: "break-word" }}>{msg.text}</span>
@@ -314,7 +199,7 @@ export default function ChatRoom() {
           <button
             onClick={() => messagesRef.current?.scrollTo({ top: messagesRef.current.scrollHeight, behavior: "smooth" })}
             className="absolute bottom-20 right-6 w-10 h-10 rounded-full shadow-lg flex items-center justify-center text-white text-lg"
-            style={{ background: "#2563eb" }}
+            style={{ background: COLORS.BLUE_BG }}
           >
             ↓
           </button>
@@ -333,7 +218,7 @@ export default function ChatRoom() {
               type="submit"
               disabled={!text.trim()}
               className="px-4 py-2 text-white rounded-lg text-sm font-medium disabled:opacity-50"
-              style={{ background: "#2563eb" }}
+              style={{ background: COLORS.BLUE_BG }}
             >
               Send
             </button>

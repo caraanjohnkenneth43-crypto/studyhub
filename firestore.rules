@@ -1,0 +1,78 @@
+rules_version = '2';
+
+// StudyHub Firestore Security Rules
+// Apply via: Firebase Console → Firestore → Rules
+// Test locally: firebase emulators:start --only firestore
+//
+// These rules require Firebase Authentication for ALL operations.
+// Without authentication, reads/writes are DENIED.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─── App Data (subjects, contributors, info) ──────────
+    // Anyone logged in can read. Anyone logged in can write (managed via API routes).
+    match /app/{document} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // ─── Feedback ────────────────────────────────────────
+    // Anyone logged in can submit or read.
+    match /feedback/{document} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if false;  // immutable once submitted
+      allow delete: if false;
+    }
+
+    // ─── Requests ────────────────────────────────────────
+    // Anyone logged in can submit. Read for all.
+    match /requests/{document} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null;  // admin resolves status
+      allow delete: if false;
+    }
+
+    // ─── Chat Rooms ──────────────────────────────────────
+    match /chatRooms/{roomId} {
+      // Anyone logged in can read/create rooms
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      // Only the room creator can delete
+      allow delete: if request.auth.uid == resource.data.createdBy;
+      // Only the room creator can update (for blocked users, etc.)
+      allow update: if request.auth.uid == resource.data.createdBy;
+
+      // ─── Chat Messages (subcollection) ──────────────────
+      match /messages/{messageId} {
+        // Anyone logged in can read messages
+        allow read: if request.auth != null;
+        // Users can only create their own messages
+        allow create: if request.auth != null
+                       && request.resource.data.userId == request.auth.uid;
+        // Messages are immutable once created
+        allow update: if false;
+        // Users can delete their own messages (profanity cleanup)
+        allow delete: if request.auth != null
+                       && resource.data.userId == request.auth.uid;
+      }
+    }
+
+    // ─── Users Collection ────────────────────────────────
+    match /users/{userId} {
+      // Anyone logged in can read user data
+      allow read: if request.auth != null;
+      // Users can only create/update their own document
+      allow create: if request.auth.uid == userId;
+      allow update: if request.auth.uid == userId;
+      allow delete: if false;
+    }
+
+    // ─── Deny everything else ────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

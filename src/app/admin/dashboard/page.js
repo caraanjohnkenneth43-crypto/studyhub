@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import SettingsPanel from "../../SettingsPanel"
 import { useAuth, allowedAdmins } from "../../AuthProvider"
+import { COLORS, GRADIENTS, ADMIN_GRADIENTS, getAdminGradientClass } from "@/lib/constants"
 
 const TABS = [
   { key: "subjects", label: "📚 Subjects" },
@@ -412,7 +413,7 @@ export default function AdminDashboard() {
                   return (
                     <div key={u.uid || u.id || u.email} className="flex items-center justify-between px-4 py-3 rounded-lg border" style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }}>
                       <span
-                        className={`text-sm font-medium ${isAdmin ? "font-bold bg-gradient-to-r from-gray-700 via-gray-300 to-white bg-clip-text text-transparent" : ""} ${isContributor && !isAdmin ? "bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent" : ""}`}
+                        className={`text-sm font-medium ${getAdminGradientClass(u.email, allowedAdmins, data.contributors || [])}`}
                         style={{ color: (!isAdmin && !isContributor) ? "var(--c-fg)" : undefined }}
                       >
                         {u.email}
