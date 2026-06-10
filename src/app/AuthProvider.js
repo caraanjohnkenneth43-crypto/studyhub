@@ -1,7 +1,7 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, useRef } from "react"
-import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "firebase/auth"
+import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile } from "firebase/auth"
 import { auth } from "@/lib/firebase"
 import { ADMIN_EMAILS } from "@/lib/constants"
 
@@ -29,10 +29,18 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     if (!user || registeredRef.current) return
     registeredRef.current = true
+    const initDisplayName = async () => {
+      if (!user.displayName) {
+        try {
+          await updateProfile(user, { displayName: user.email.split("@")[0] })
+        } catch {}
+      }
+    }
+    initDisplayName()
     fetch("/api/users", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ uid: user.uid, email: user.email }),
+      body: JSON.stringify({ uid: user.uid, email: user.email, displayName: user.displayName || user.email.split("@")[0] }),
     }).catch(() => {})
   }, [user])
 

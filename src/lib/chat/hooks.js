@@ -6,7 +6,7 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { doc, getDoc, deleteDoc, collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, updateDoc, limit, getDocs } from "firebase/firestore"
 import { db } from "@/lib/firebase"
-import { containsProfanity, censorMessage } from "@/lib/profanity"
+
 import { buildUidToEmailMap } from "@/lib/chat/gradients"
 import { hasStoredPassword } from "@/lib/chat/password"
 
@@ -39,7 +39,7 @@ export function useRoom(id) {
 }
 
 /**
- * Subscribe to real-time messages for a room, deleting profane ones.
+ * Subscribe to real-time messages for a room.
  */
 export function useMessages(id, verified) {
   const [messages, setMessages] = useState([])
@@ -48,15 +48,7 @@ export function useMessages(id, verified) {
     if (!verified) return
     const q = query(collection(db, "chatRooms", id, "messages"), orderBy("timestamp", "asc"), limit(200))
     const unsub = onSnapshot(q, snap => {
-      const clean = []
-      snap.docs.forEach(d => {
-        if (containsProfanity(d.data().text || "")) {
-          deleteDoc(doc(db, "chatRooms", id, "messages", d.id))
-        } else {
-          clean.push({ id: d.id, ...d.data() })
-        }
-      })
-      setMessages(clean)
+      setMessages(snap.docs.map(d => ({ id: d.id, ...d.data() })))
     })
     return unsub
   }, [id, verified])
@@ -131,11 +123,12 @@ export function useSendMessage(id, user, text, setText) {
   return useCallback(async (e) => {
     e.preventDefault()
     if (!text.trim()) return
+    const displayName = user.displayName || user.email.split("@")[0]
     await addDoc(collection(db, "chatRooms", id, "messages"), {
       userId: user.uid,
-      userName: user.email.split("@")[0],
+      userName: displayName,
       userEmail: user.email,
-      text: censorMessage(text.trim()),
+      text: text.trim(),
       timestamp: serverTimestamp(),
     })
     setText("")

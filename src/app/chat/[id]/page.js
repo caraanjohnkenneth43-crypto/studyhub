@@ -66,7 +66,7 @@ export default function ChatRoom() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center" style={{ background: "var(--c-bg)", color: "var(--c-subtle)" }}>
         <p className="text-lg">Room not found.</p>
-        <Link href="/chat" className="text-sm underline mt-2" style={{ color: COLORS.BLUE }}>Back to chat</Link>
+        <Link href="/chat" className="text-sm underline mt-2" style={{ color: "var(--c-link)" }}>Back to chat</Link>
       </div>
     )
   }
@@ -77,7 +77,35 @@ export default function ChatRoom() {
         <div className="rounded-xl border shadow-xl p-6 w-full max-w-sm mx-4 text-center" style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }}>
           <h2 className="text-lg font-semibold mb-2" style={{ color: "var(--c-fg)" }}>🔒 Access Revoked</h2>
           <p className="text-sm mb-4" style={{ color: "var(--c-muted)" }}>You&apos;ve been removed from this room by the owner.</p>
-          <Link href="/chat" className="text-sm underline" style={{ color: COLORS.BLUE }}>Back to chat</Link>
+          <Link href="/chat" className="text-sm underline" style={{ color: "var(--c-link)" }}>Back to chat</Link>
+        </div>
+      </div>
+    )
+  }
+
+  if (room && room.type === "private" && !verified) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--c-bg)" }}>
+        <div className="rounded-xl border shadow-xl p-6 w-full max-w-sm mx-4" style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }}>
+          <div className="flex items-center justify-between mb-1">
+            <h2 className="text-lg font-semibold" style={{ color: "var(--c-fg)" }}>🔒 Private Room</h2>
+            <button onClick={() => router.back()} className="text-sm px-2 py-1 rounded hover:bg-black/5" style={{ color: "var(--c-muted)" }}>&larr; Back</button>
+          </div>
+          <p className="text-sm mb-4" style={{ color: "var(--c-muted)" }}>Enter the room password to join.</p>
+          <input
+            value={password}
+            onChange={e => { setPassword(e.target.value); setPasswordError(false) }}
+            type="password"
+            placeholder="Room password"
+            autoComplete="new-password"
+            data-1p-ignore
+            data-lpignore="true"
+            onKeyDown={e => e.key === "Enter" && checkPassword()}
+            className="w-full px-3 py-2 rounded-lg text-sm border mb-2"
+            style={{ background: "var(--c-bg)", borderColor: passwordError ? COLORS.RED : "var(--c-border)", color: "var(--c-fg)" }}
+          />
+          {passwordError && <p className="text-xs mb-2" style={{ color: COLORS.RED }}>Incorrect password.</p>}
+          <button onClick={checkPassword} disabled={!password.trim()} className="w-full py-2 text-white rounded-lg text-sm font-medium disabled:opacity-50" style={{ background: "var(--c-accent)" }}>Join Room</button>
         </div>
       </div>
     )
@@ -85,28 +113,6 @@ export default function ChatRoom() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "var(--c-bg)" }}>
-      {room && room.type === "private" && !verified && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.5)" }}>
-          <div className="rounded-xl border shadow-xl p-6 w-full max-w-sm mx-4" style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }}>
-            <h2 className="text-lg font-semibold mb-1" style={{ color: "var(--c-fg)" }}>🔒 Private Room</h2>
-            <p className="text-sm mb-4" style={{ color: "var(--c-muted)" }}>Enter the room password to join.</p>
-            <input
-              value={password}
-              onChange={e => { setPassword(e.target.value); setPasswordError(false) }}
-              type="password"
-              placeholder="Room password"
-              autoComplete="new-password"
-              data-1p-ignore
-              data-lpignore="true"
-              onKeyDown={e => e.key === "Enter" && checkPassword()}
-              className="w-full px-3 py-2 rounded-lg text-sm border mb-2"
-              style={{ background: "var(--c-bg)", borderColor: passwordError ? COLORS.RED : "var(--c-border)", color: "var(--c-fg)" }}
-            />
-            {passwordError && <p className="text-xs mb-2" style={{ color: COLORS.RED }}>Incorrect password.</p>}
-            <button onClick={checkPassword} disabled={!password.trim()} className="w-full py-2 text-white rounded-lg text-sm font-medium disabled:opacity-50" style={{ background: COLORS.BLUE_BG }}>Join Room</button>
-          </div>
-        </div>
-      )}
       <header style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }} className="border-b sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -145,7 +151,7 @@ export default function ChatRoom() {
                 {(room.blocked || []).map(email => (
                   <div key={email} className="flex items-center justify-between gap-2">
                     <span className="text-xs truncate" style={{ color: "var(--c-muted)" }}>{email}</span>
-                    <button onClick={() => unblockUser(email)} className="text-xs shrink-0" style={{ color: COLORS.BLUE }}>Unblock</button>
+                    <button onClick={() => unblockUser(email)} className="text-xs shrink-0" style={{ color: "var(--c-link)" }}>Unblock</button>
                   </div>
                 ))}
               </div>
@@ -196,7 +202,7 @@ export default function ChatRoom() {
           <button
             onClick={() => messagesRef.current?.scrollTo({ top: messagesRef.current.scrollHeight, behavior: "smooth" })}
             className="absolute bottom-20 right-6 w-10 h-10 rounded-full shadow-lg flex items-center justify-center text-white text-lg"
-            style={{ background: COLORS.BLUE_BG }}
+            style={{ background: "var(--c-accent)" }}
           >
             ↓
           </button>
@@ -215,7 +221,7 @@ export default function ChatRoom() {
               type="submit"
               disabled={!text.trim()}
               className="px-4 py-2 text-white rounded-lg text-sm font-medium disabled:opacity-50"
-              style={{ background: COLORS.BLUE_BG }}
+              style={{ background: "var(--c-accent)" }}
             >
               Send
             </button>

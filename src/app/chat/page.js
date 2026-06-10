@@ -52,7 +52,7 @@ export default function ChatPage() {
       type: newRoom.type,
       password: newRoom.type === "private" ? newRoom.password.trim() : "",
       createdBy: user.uid,
-      createdByName: user.email,
+      createdByName: user.displayName || user.email.split("@")[0],
       createdAt: serverTimestamp(),
     })
     setNewRoom({ name: "", description: "", topic: "", type: "public", password: "" })

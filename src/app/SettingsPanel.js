@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useAuth } from "./AuthProvider"
+import { updateProfile } from "firebase/auth"
+import { auth } from "@/lib/firebase"
 import { collection, query, onSnapshot } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 
@@ -90,6 +92,8 @@ export function SettingsContent({ settings, onUpdate, user }) {
   const [now, setNow] = useState(new Date())
   const [rooms, setRooms] = useState([])
   const [accountAge, setAccountAge] = useState("Unknown")
+  const [displayName, setDisplayName] = useState(user?.displayName || "")
+  const [displayNameSaving, setDisplayNameSaving] = useState(false)
   const notifSettings = settings.notifications || { enabled: false, sound: true, popup: true, rooms: [] }
 
   useEffect(() => {
@@ -180,7 +184,30 @@ export function SettingsContent({ settings, onUpdate, user }) {
           Account Status
         </h4>
         <div className="space-y-1 text-sm" style={{ color: "var(--c-muted)" }}>
-          <p><span className="font-medium" style={{ color: "var(--c-fg)" }}>Username:</span> {user?.email?.split("@")[0] || "—"}</p>
+          <div className="flex items-center gap-2">
+            <span className="font-medium shrink-0" style={{ color: "var(--c-fg)" }}>Name:</span>
+            <input value={displayName} onChange={e => setDisplayName(e.target.value)}
+              className="flex-1 px-2 py-0.5 rounded text-sm border min-w-0"
+              style={{ background: "var(--c-bg)", borderColor: "var(--c-border)", color: "var(--c-fg)" }}
+            />
+            <button onClick={async () => {
+              if (!displayName.trim() || displayNameSaving) return
+              setDisplayNameSaving(true)
+              try {
+                await updateProfile(auth.currentUser, { displayName: displayName.trim() })
+                await fetch("/api/users", {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ uid: user.uid, displayName: displayName.trim() }),
+                })
+              } catch {}
+              setDisplayNameSaving(false)
+            }} disabled={displayNameSaving || !displayName.trim()}
+              className="text-xs px-2 py-0.5 rounded text-white font-medium disabled:opacity-50 shrink-0"
+              style={{ background: "var(--c-accent)" }}>
+              {displayNameSaving ? "..." : "Save"}
+            </button>
+          </div>
           <p><span className="font-medium" style={{ color: "var(--c-fg)" }}>Email:</span> {user?.email || "—"}</p>
           <p><span className="font-medium" style={{ color: "var(--c-fg)" }}>Account Age:</span> {accountAge}</p>
           <p><span className="font-medium" style={{ color: "var(--c-fg)" }}>Today:</span> {today}</p>

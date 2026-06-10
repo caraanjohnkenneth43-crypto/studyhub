@@ -92,7 +92,7 @@ export async function GET() {
 
 export async function POST(request) {
   try {
-    const { uid, email } = await request.json()
+    const { uid, email, displayName } = await request.json()
     if (!uid || !email) {
       return Response.json({ success: false, error: "uid and email required" }, { status: 400 })
     }
@@ -102,12 +102,26 @@ export async function POST(request) {
       await ref.set({
         uid,
         email,
+        displayName: displayName || email.split("@")[0],
         createdAt: new Date().toISOString(),
         lastSeen: new Date().toISOString(),
       })
     } else {
       await ref.set({ lastSeen: new Date().toISOString() }, { merge: true })
     }
+    return Response.json({ success: true })
+  } catch (e) {
+    return Response.json({ success: false, error: e.message }, { status: 400 })
+  }
+}
+
+export async function PUT(request) {
+  try {
+    const { uid, displayName } = await request.json()
+    if (!uid || !displayName || typeof displayName !== "string" || !displayName.trim()) {
+      return Response.json({ success: false, error: "Valid uid and displayName required" }, { status: 400 })
+    }
+    await adminDB.collection("users").doc(uid).update({ displayName: displayName.trim() })
     return Response.json({ success: true })
   } catch (e) {
     return Response.json({ success: false, error: e.message }, { status: 400 })

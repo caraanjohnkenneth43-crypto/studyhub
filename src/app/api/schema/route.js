@@ -52,8 +52,8 @@ export async function GET() {
         note: "Old messages lack userEmail — resolved via uidToEmail map (Admin SDK + users collection)",
       },
       "users/{uid}": {
-        fields: { uid: "string", email: "string", createdAt: "string(ISO)", lastSeen: "string(ISO)" },
-        access: "POST via /api/users (AuthProvider auto-registers)",
+        fields: { uid: "string", email: "string", displayName: "string", createdAt: "string(ISO)", lastSeen: "string(ISO)" },
+        access: "POST via /api/users (AuthProvider auto-registers), PUT to update displayName",
       },
       "scores/{id}": {
         fields: { uid: "string", email: "string", quizId: "string", quizTitle: "string", score: "number", total: "number", timestamp: "string(ISO)" },
@@ -72,7 +72,6 @@ export async function GET() {
       chatGradients: "src/lib/chat/gradients.js",
       chatPassword: "src/lib/chat/password.js",
       chatModeration: "src/lib/chat/moderation.js",
-      profanityFilter: "src/lib/profanity.js",
       adminSDK: "src/lib/firebase-admin.js",
       clientSDK: "src/lib/firebase.js",
     },
@@ -82,6 +81,7 @@ export async function GET() {
       "app/data is a single doc — concurrent saves clobber",
       "Firestore rules restrict app/data writes to admin emails + feedback updates to admins",
       "Chat messages limited to 200 — no pagination",
+      "Profanity filter removed Feb 2026 — messages stored as-is",
     ],
   })
 }
