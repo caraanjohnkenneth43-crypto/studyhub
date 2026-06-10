@@ -35,8 +35,8 @@ export async function GET() {
         access: "Client SDK via /api/data (GET/PUT)",
       },
       "feedback/{id}": {
-        fields: { name: "string", message: "string", timestamp: "string(ISO)" },
-        access: "Client SDK via /api/feedback (POST/GET)",
+        fields: { name: "string", message: "string", timestamp: "string(ISO)", status: "open|resolved" },
+        access: "Client SDK via /api/feedback (POST/GET/PUT)",
       },
       "requests/{id}": {
         fields: { name: "string", subjectId: "string", subjectName: "string", actionType: "add|edit|remove", targetType: "quiz|link|subject", message: "string", timestamp: "string(ISO)", status: "open|resolved" },
@@ -54,6 +54,10 @@ export async function GET() {
       "users/{uid}": {
         fields: { uid: "string", email: "string", createdAt: "string(ISO)", lastSeen: "string(ISO)" },
         access: "POST via /api/users (AuthProvider auto-registers)",
+      },
+      "scores/{id}": {
+        fields: { uid: "string", email: "string", quizId: "string", quizTitle: "string", score: "number", total: "number", timestamp: "string(ISO)" },
+        access: "Client SDK via /api/score (POST/GET)",
       },
     },
     gradients: {
@@ -76,7 +80,7 @@ export async function GET() {
       "Old chat messages lack userEmail — resolved via uidToEmail[msg.userId]",
       "FIREBASE_SERVICE_ACCOUNT must be single-line JSON (not pretty-printed)",
       "app/data is a single doc — concurrent saves clobber",
-      "No Firestore security rules — all client requests are accepted",
+      "Firestore rules restrict app/data writes to admin emails + feedback updates to admins",
       "Chat messages limited to 200 — no pagination",
     ],
   })

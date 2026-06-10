@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, useRef } from "react"
 import { collection, query, orderBy, limit, onSnapshot } from "firebase/firestore"
 import { db } from "@/lib/firebase"
+import { useAuth } from "./AuthProvider"
 
 const NotifContext = createContext(null)
 
@@ -26,6 +27,7 @@ function saveTimestamps(timestamps) {
 }
 
 export function ChatNotificationProvider({ children }) {
+  const { user } = useAuth()
   const [activeRoom, setActiveRoom] = useState(null)
   const activeRoomRef = useRef(null)
   const timestampsRef = useRef(loadTimestamps())
@@ -69,6 +71,7 @@ export function ChatNotificationProvider({ children }) {
   }, [])
 
   useEffect(() => {
+    if (!user) return
     const msgUnsubs = {}
 
     const roomsQuery = query(collection(db, "chatRooms"))
@@ -129,7 +132,7 @@ export function ChatNotificationProvider({ children }) {
       unsubRooms()
       Object.values(msgUnsubs).forEach(u => u())
     }
-  }, [activeRoom])
+  }, [user, activeRoom])
 
   return (
     <NotifContext.Provider value={{ activeRoom, setActiveRoom }}>

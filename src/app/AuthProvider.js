@@ -9,9 +9,6 @@ const AuthContext = createContext(null)
 
 export const allowedAdmins = ADMIN_EMAILS
 
-const isDev = typeof window !== "undefined" &&
-  (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
-
 export function useAuth() {
   return useContext(AuthContext)
 }
@@ -22,17 +19,6 @@ export function AuthProvider({ children }) {
   const registeredRef = useRef(false)
 
   useEffect(() => {
-    if (isDev) {
-      const devUser = { email: "dev@studyhub.local", uid: "dev-user" }
-      setUser(devUser)
-      setLoading(false)
-      fetch("/api/users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ uid: devUser.uid, email: devUser.email }),
-      }).catch(() => {})
-      return
-    }
     const unsub = onAuthStateChanged(auth, (user) => {
       setUser(user)
       setLoading(false)
@@ -53,26 +39,12 @@ export function AuthProvider({ children }) {
   const signUp = (email, password) => createUserWithEmailAndPassword(auth, email, password)
   const logIn = (email, password) => signInWithEmailAndPassword(auth, email, password)
 
-  const devLogIn = (email) => {
-    if (!isDev) return
-    const u = { email, uid: email.replace(/[^a-z0-9]/gi, "-") }
-    setUser(u)
-    fetch("/api/users", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ uid: u.uid, email: u.email }),
-    }).catch(() => {})
-  }
-
-  const logOut = () => {
-    if (isDev) { setUser(null); return }
-    return signOut(auth)
-  }
+  const logOut = () => signOut(auth)
 
   const isAdmin = user && allowedAdmins.includes(user.email)
 
   return (
-    <AuthContext.Provider value={{ user, loading, signUp, logIn, devLogIn, logOut, isAdmin }}>
+    <AuthContext.Provider value={{ user, loading, signUp, logIn, logOut, isAdmin }}>
       {children}
     </AuthContext.Provider>
   )

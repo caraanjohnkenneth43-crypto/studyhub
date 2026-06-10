@@ -10,7 +10,17 @@ const SETTINGS_KEY = "studyhub-settings"
 const defaults = {
   dark: false,
   fontSize: 16,
+  theme: "blue",
 }
+
+const THEMES = [
+  { id: "blue", label: "Blue", color: "#2563eb" },
+  { id: "green", label: "Green", color: "#16a34a" },
+  { id: "purple", label: "Purple", color: "#7c3aed" },
+  { id: "orange", label: "Orange", color: "#ea580c" },
+  { id: "pink", label: "Pink", color: "#db2777" },
+  { id: "teal", label: "Teal", color: "#0d9488" },
+]
 
 const legacyFontMap = { small: 14, medium: 16, large: 18 }
 
@@ -32,7 +42,7 @@ function apply(settings) {
   const root = document.documentElement
   root.classList.toggle("dark", settings.dark)
   root.style.fontSize = settings.fontSize + "px"
-  root.classList.remove("density-compact", "density-comfortable", "density-spacious")
+  root.setAttribute("data-theme", settings.theme || "blue")
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
 }
 
@@ -144,6 +154,23 @@ export function SettingsContent({ settings, onUpdate, user }) {
           onChange={e => onUpdate("fontSize", Number(e.target.value))}
           className="w-full"
         />
+      </div>
+
+      <div>
+        <span className="text-sm block mb-1" style={{ color: "var(--c-fg)" }}>Theme</span>
+        <div className="flex gap-2 flex-wrap">
+          {THEMES.map(t => (
+            <button key={t.id} onClick={() => onUpdate("theme", t.id)}
+              className="w-6 h-6 rounded-full border-2 transition-transform"
+              style={{
+                background: t.color,
+                borderColor: settings.theme === t.id ? "var(--c-fg)" : "transparent",
+                transform: settings.theme === t.id ? "scale(1.2)" : "scale(1)",
+              }}
+              title={t.label}
+            />
+          ))}
+        </div>
       </div>
 
       <hr className="border-t" style={{ borderColor: "var(--c-border)" }} />

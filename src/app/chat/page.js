@@ -148,7 +148,7 @@ export default function ChatPage() {
                   </div>
                 )}
                 <div className="flex gap-2 pt-2">
-                  <button type="submit" className="px-4 py-1.5 text-white rounded-lg text-sm font-medium" style={{ background: "#2563eb" }}>Create</button>
+                  <button type="submit" className="px-4 py-1.5 text-white rounded-lg text-sm font-medium" style={{ background: "var(--c-accent)" }}>Create</button>
                   <button type="button" onClick={() => setShowCreate(false)} className="px-4 py-1.5 rounded-lg text-sm" style={{ color: "var(--c-subtle)" }}>Cancel</button>
                 </div>
               </form>

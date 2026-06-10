@@ -32,7 +32,7 @@ export default function LandingPage() {
             <Link
               href="/login"
               className="px-6 py-3 rounded-lg text-white font-medium transition-colors"
-              style={{ background: "#2563eb" }}
+              style={{ background: "var(--c-accent)" }}
             >
               Log In
             </Link>

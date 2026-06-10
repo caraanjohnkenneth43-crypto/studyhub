@@ -10,6 +10,7 @@ export async function POST(request) {
       name: typeof name === "string" && name.trim() ? name.trim() : "Anonymous",
       message: message.trim(),
       timestamp: new Date().toISOString(),
+      status: "open",
     })
     return Response.json({ success: true, id: doc.id })
   } catch (e) {
@@ -24,5 +25,18 @@ export async function GET() {
     return Response.json(feedback)
   } catch (e) {
     return Response.json([], { status: 200 })
+  }
+}
+
+export async function PUT(request) {
+  try {
+    const { id, status } = await request.json()
+    if (!id || !["open", "resolved"].includes(status)) {
+      return Response.json({ success: false, error: "Valid id and status (open|resolved) required" }, { status: 400 })
+    }
+    await adminDB.collection("feedback").doc(id).update({ status })
+    return Response.json({ success: true })
+  } catch (e) {
+    return Response.json({ success: false, error: e.message }, { status: 400 })
   }
 }

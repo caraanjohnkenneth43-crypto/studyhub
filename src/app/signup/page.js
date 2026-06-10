@@ -95,7 +95,7 @@ export default function SignupPage() {
             type="submit"
             disabled={loading}
             className="w-full py-2 text-white rounded-lg text-sm font-medium disabled:opacity-50 transition-colors"
-            style={{ background: "#2563eb" }}
+            style={{ background: "var(--c-accent)" }}
           >
             {loading ? "Creating account..." : "Sign Up"}
           </button>

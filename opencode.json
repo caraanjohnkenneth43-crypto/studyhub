@@ -8,7 +8,7 @@
       "hidden": false
     },
     "admin": {
-      "prompt": "You are an admin panel specialist. Read AGENTS-admin.md and AGENTS-firebase.md for full context.",
+      "prompt": "You are an admin panel specialist. Read AGENTS-database.md and AGENTS-firebase.md for full context.",
       "description": "Admin panel specialist — CRUD, contributors, users, feedback",
       "hidden": false
     },

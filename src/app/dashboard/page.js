@@ -59,18 +59,34 @@ export default function DashboardHome() {
               <button onClick={logOut} className="w-full text-left text-sm px-3 py-2 rounded-lg transition-colors hover:bg-black/5" style={{ color: "var(--c-subtle)" }}>Log out</button>
             </div>
           ) : (
-            <button
-              onClick={() => router.push("/dashboard/2029")}
-              className="w-full rounded-xl border-2 card-pad text-left transition-all hover:border-blue-400"
-              style={{
-                background: "var(--c-card)",
-                borderColor: "var(--c-border)",
-                color: "var(--c-fg)",
-              }}
-            >
-              <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: "var(--c-muted)" }}>Classroom</p>
-              <p className="text-base font-semibold">Class of 2029 &rarr;</p>
-            </button>
+            <>
+              <button
+                onClick={() => router.push("/dashboard/2029")}
+                className="w-full rounded-xl border-2 card-pad text-left transition-all hover:border-blue-400"
+                style={{
+                  background: "var(--c-card)",
+                  borderColor: "var(--c-border)",
+                  color: "var(--c-fg)",
+                }}
+              >
+                <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: "var(--c-muted)" }}>Classroom</p>
+                <p className="text-base font-semibold">Class of 2029 &rarr;</p>
+              </button>
+              <Link href="/calculator"
+                className="w-full rounded-xl border-2 card-pad text-left transition-all hover:border-blue-400 flex items-center gap-2"
+                style={{
+                  background: "var(--c-card)",
+                  borderColor: "var(--c-border)",
+                  color: "var(--c-fg)",
+                }}
+              >
+                <span className="text-lg">🔢</span>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: "var(--c-muted)" }}>Tools</p>
+                  <p className="text-base font-semibold">Calculator</p>
+                </div>
+              </Link>
+            </>
           )}
         </div>
 

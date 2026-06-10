@@ -1,0 +1,36 @@
+# Deploy Firestore Rules on push to main
+# Requires: FIREBASE_SERVICE_ACCOUNT secret set in GitHub repo settings
+# Also needs: Firebase project ID (studyhub-e1f30)
+#
+# Setup:
+#   1. Go to GitHub repo → Settings → Secrets and variables → Actions
+#   2. Add secret: FIREBASE_SERVICE_ACCOUNT (paste the full JSON)
+#   3. Done. Rules auto-deploy on every push to main.
+
+name: Deploy Firestore Rules
+
+on:
+  push:
+    branches: [main]
+    paths: ["firestore.rules"]
+  workflow_dispatch: # manual trigger
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Write service account
+        run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > /tmp/sa.json
+
+      - name: Deploy Firestore Rules
+        run: |
+          firebase deploy --only firestore:rules \
+            --project studyhub-e1f30 \
+            --token "$(firebase login:ci --no-localhost)"
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}

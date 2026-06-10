@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import SettingsPanel from "../../SettingsPanel"
 import { useAuth, allowedAdmins } from "../../AuthProvider"
 import { COLORS, GRADIENTS, ADMIN_GRADIENTS, getAdminGradientClass } from "@/lib/constants"
+import DOMPurify from "dompurify"
 
 const TABS = [
   { key: "subjects", label: "📚 Subjects" },
@@ -224,7 +225,7 @@ export default function AdminDashboard() {
           </div>
           <div className="flex items-center gap-4">
             {message && <span className="text-sm font-medium" style={{ color: message === "Saved!" ? "#16a34a" : "#ef4444" }}>{message}</span>}
-            <button onClick={() => save()} disabled={saving} className="px-5 py-2 text-white rounded-lg text-sm font-medium disabled:opacity-50 transition-colors" style={{ background: "#2563eb" }}>
+            <button onClick={() => save()} disabled={saving} className="px-5 py-2 text-white rounded-lg text-sm font-medium disabled:opacity-50 transition-colors" style={{ background: "var(--c-accent)" }}>
               {saving ? "Saving..." : "Save Changes"}
             </button>
             <span className="text-sm hidden sm:inline" style={{ color: "var(--c-subtle)" }}>{user.email}</span>
@@ -254,7 +255,7 @@ export default function AdminDashboard() {
             <aside className="w-72 shrink-0 border-r p-4 overflow-y-auto" style={{ borderColor: "var(--c-border)", height: "calc(100vh - 140px)" }}>
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-sm font-semibold" style={{ color: "var(--c-fg)" }}>Subjects</h2>
-                <button onClick={addSubject} className="text-sm" style={{ color: "#2563eb" }}>+ Add</button>
+                <button onClick={addSubject} className="text-sm" style={{ color: "var(--c-accent)" }}>+ Add</button>
               </div>
               {data.subjects.length === 0 && <p className="text-sm" style={{ color: "var(--c-subtle)" }}>No subjects yet.</p>}
               <div className="space-y-1.5">
@@ -311,7 +312,7 @@ export default function AdminDashboard() {
                   <div style={{ background: "var(--c-bg)", borderColor: "var(--c-border)" }} className="rounded-xl border p-6">
                     <div className="flex items-center justify-between mb-4">
                       <h2 className="text-base font-semibold" style={{ color: "var(--c-fg)" }}>Quizzes</h2>
-                      <button onClick={() => addQuiz(activeSubject)} className="text-sm" style={{ color: "#2563eb" }}>+ Add Quiz</button>
+                      <button onClick={() => addQuiz(activeSubject)} className="text-sm" style={{ color: "var(--c-accent)" }}>+ Add Quiz</button>
                     </div>
                     {subject.quizzes.length === 0 && <p className="text-sm" style={{ color: "var(--c-subtle)" }}>No quizzes yet.</p>}
                     {subject.quizzes.map((quiz, qi) => (
@@ -343,7 +344,7 @@ export default function AdminDashboard() {
                             </div>
                           </div>
                         ))}
-                        <button onClick={() => addQuestion(activeSubject, qi)} className="text-sm mt-1" style={{ color: "#2563eb" }}>+ Add Question</button>
+                        <button onClick={() => addQuestion(activeSubject, qi)} className="text-sm mt-1" style={{ color: "var(--c-accent)" }}>+ Add Question</button>
                       </div>
                     ))}
                   </div>
@@ -351,7 +352,7 @@ export default function AdminDashboard() {
                   <div style={{ background: "var(--c-bg)", borderColor: "var(--c-border)" }} className="rounded-xl border p-6">
                     <div className="flex items-center justify-between mb-4">
                       <h2 className="text-base font-semibold" style={{ color: "var(--c-fg)" }}>Links / Resources</h2>
-                      <button onClick={() => addLink(activeSubject)} className="text-sm" style={{ color: "#2563eb" }}>+ Add Link</button>
+                      <button onClick={() => addLink(activeSubject)} className="text-sm" style={{ color: "var(--c-accent)" }}>+ Add Link</button>
                     </div>
                     {subject.links.length === 0 && <p className="text-sm" style={{ color: "var(--c-subtle)" }}>No links yet.</p>}
                     {subject.links.map((link, li) => (
@@ -375,7 +376,7 @@ export default function AdminDashboard() {
             <p className="text-sm mb-4" style={{ color: "var(--c-muted)" }}>Contributors can review and act on student requests.</p>
             <div className="flex gap-2 mb-4">
               <input value={contributorInput} onChange={e => setContributorInput(e.target.value)} placeholder="Email address..." onKeyDown={e => e.key === "Enter" && addContributor()} className="flex-1 px-4 py-2.5 rounded-lg border text-sm" style={{ background: "var(--c-card)", borderColor: "var(--c-border)", color: "var(--c-fg)" }} />
-              <button onClick={addContributor} className="px-4 py-2.5 text-white rounded-lg text-sm font-medium" style={{ background: "#2563eb" }}>Add</button>
+              <button onClick={addContributor} className="px-4 py-2.5 text-white rounded-lg text-sm font-medium" style={{ background: "var(--c-accent)" }}>Add</button>
             </div>
             <div className="space-y-1.5">
               {contributors.length === 0 && <p className="text-sm" style={{ color: "var(--c-subtle)" }}>No contributors added yet.</p>}
@@ -386,7 +387,7 @@ export default function AdminDashboard() {
                 </div>
               ))}
             </div>
-            <button onClick={() => save()} disabled={saving} className="mt-6 px-5 py-2.5 text-white rounded-lg text-sm font-medium disabled:opacity-50" style={{ background: "#2563eb" }}>
+            <button onClick={() => save()} disabled={saving} className="mt-6 px-5 py-2.5 text-white rounded-lg text-sm font-medium disabled:opacity-50" style={{ background: "var(--c-accent)" }}>
               {saving ? "Saving..." : "Save Contributors"}
             </button>
           </div>
@@ -397,7 +398,7 @@ export default function AdminDashboard() {
             <h2 className="text-lg font-semibold mb-1" style={{ color: "var(--c-fg)" }}>👤 All Users</h2>
             <p className="text-sm mb-4" style={{ color: "var(--c-muted)" }}>Every registered Firebase Auth user.</p>
             <div className="flex items-center gap-3 mb-4">
-              <button onClick={() => fetch("/api/users").then(r => r.json()).then(data => { setUsers(data.users || data); setDebugInfo(data._debug || null) })} className="text-sm" style={{ color: "#2563eb" }}>↻ Refresh</button>
+              <button onClick={() => fetch("/api/users").then(r => r.json()).then(data => { setUsers(data.users || data); setDebugInfo(data._debug || null) })} className="text-sm" style={{ color: "var(--c-accent)" }}>↻ Refresh</button>
               {debugInfo && (
                 <span className="text-xs" style={{ color: debugInfo.usedAdmin ? "#16a34a" : "#d97706" }}>
                   {debugInfo.usedAdmin ? "✓ Admin SDK" : debugInfo.adminInitError ? `✗ Admin SDK error: ${debugInfo.adminInitError}` : "○ Fallback (no Admin SDK env vars)"}
@@ -435,18 +436,38 @@ export default function AdminDashboard() {
           <div className="flex-1 p-6 max-w-3xl">
             <h2 className="text-lg font-semibold mb-1" style={{ color: "var(--c-fg)" }}>💬 Feedback</h2>
             <p className="text-sm mb-4" style={{ color: "var(--c-muted)" }}>What students are saying about StudyHub.</p>
-            <button onClick={() => fetch("/api/feedback").then(r => r.json()).then(setFeedback)} className="text-sm mb-4" style={{ color: "#2563eb" }}>↻ Refresh</button>
+            <button onClick={() => fetch("/api/feedback").then(r => r.json()).then(setFeedback)} className="text-sm mb-4" style={{ color: "var(--c-accent)" }}>↻ Refresh</button>
             {feedback.length === 0 ? (
               <p className="text-sm" style={{ color: "var(--c-subtle)" }}>No feedback yet.</p>
             ) : (
               <div className="space-y-3">
                 {feedback.map(f => (
-                  <div key={f.id} className="border rounded-xl p-5" style={{ borderColor: "var(--c-border)" }}>
+                  <div key={f.id} className="border rounded-xl p-5" style={{ borderColor: "var(--c-border)", opacity: f.status === "resolved" ? 0.6 : 1 }}>
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm font-semibold" style={{ color: "var(--c-fg)" }}>{f.name || "Anonymous"}</span>
-                      <span className="text-xs" style={{ color: "var(--c-subtle)" }}>{new Date(f.timestamp).toLocaleString()}</span>
+                      <div className="flex items-center gap-2">
+                        {f.status && (
+                          <span className="text-xs px-2 py-0.5 rounded-full capitalize" style={{
+                            background: f.status === "open" ? "#fef3c7" : "#dcfce7",
+                            color: f.status === "open" ? "#92400e" : "#166534",
+                          }}>{f.status}</span>
+                        )}
+                        <span className="text-xs" style={{ color: "var(--c-subtle)" }}>{new Date(f.timestamp).toLocaleString()}</span>
+                      </div>
                     </div>
                     <p className="text-sm" style={{ color: "var(--c-muted)" }}>{f.message}</p>
+                    {f.status !== "resolved" && (
+                      <button onClick={async () => {
+                        await fetch("/api/feedback", {
+                          method: "PUT",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ id: f.id, status: "resolved" }),
+                        })
+                        setFeedback(prev => prev.map(x => x.id === f.id ? { ...x, status: "resolved" } : x))
+                      }} className="text-xs mt-3 px-3 py-1 rounded-lg" style={{ background: "#dcfce7", color: "#166534" }}>
+                        ✓ Mark Resolved
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -496,7 +517,7 @@ export default function AdminDashboard() {
             <div style={{ background: "var(--c-bg)", borderColor: "var(--c-border)" }} className="rounded-xl border p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold" style={{ color: "var(--c-fg)" }}>📋 Dashboard Info</h2>
-                <button onClick={() => setInfoSections([...infoSections, { title: "", content: "" }])} className="text-sm" style={{ color: "#2563eb" }}>+ Add Section</button>
+                <button onClick={() => setInfoSections([...infoSections, { title: "", content: "" }])} className="text-sm" style={{ color: "var(--c-accent)" }}>+ Add Section</button>
               </div>
               {infoSections.length === 0 ? (
                 <p className="text-sm" style={{ color: "var(--c-subtle)" }}>No sections yet.</p>
@@ -508,10 +529,10 @@ export default function AdminDashboard() {
                         <div
                           contentEditable
                           suppressContentEditableWarning
-                          dangerouslySetInnerHTML={{ __html: section.title }}
+                          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(section.title) }}
                           onBlur={(e) => {
                             const u = [...infoSections]
-                            u[i] = { ...u[i], title: e.currentTarget.innerHTML }
+                            u[i] = { ...u[i], title: DOMPurify.sanitize(e.currentTarget.innerHTML) }
                             setInfoSections(u)
                           }}
                           className="text-base font-medium flex-1 px-1 py-0.5 outline-none"
@@ -561,10 +582,10 @@ export default function AdminDashboard() {
                       <div
                         contentEditable
                         suppressContentEditableWarning
-                        dangerouslySetInnerHTML={{ __html: section.content }}
+                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(section.content) }}
                         onBlur={(e) => {
                           const u = [...infoSections]
-                          u[i] = { ...u[i], content: e.currentTarget.innerHTML }
+                          u[i] = { ...u[i], content: DOMPurify.sanitize(e.currentTarget.innerHTML) }
                           setInfoSections(u)
                         }}
                         className="w-full min-h-[6rem] rounded-lg border p-3 text-sm outline-none"
@@ -574,7 +595,7 @@ export default function AdminDashboard() {
                   ))}
                 </div>
               )}
-              <button onClick={() => save({ ...data, info: infoSections })} className="mt-6 px-5 py-2.5 text-white rounded-lg text-sm font-medium" style={{ background: "#2563eb" }}>Save Info</button>
+              <button onClick={() => save({ ...data, info: infoSections })} className="mt-6 px-5 py-2.5 text-white rounded-lg text-sm font-medium" style={{ background: "var(--c-accent)" }}>Save Info</button>
             </div>
           </div>
         )}

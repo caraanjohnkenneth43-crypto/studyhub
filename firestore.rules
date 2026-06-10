@@ -11,18 +11,25 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // ─── App Data (subjects, contributors, info) ──────────
-    // Anyone logged in can read. Anyone logged in can write (managed via API routes).
+    // Reads: any authenticated user. Writes: admins only (managed via API routes).
     match /app/{document} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null;
+      allow write: if request.auth != null
+        && request.auth.token.email in [
+          "john.caraan@student.nhsau64.gov",
+          "dev@studyhub.local"
+        ];
     }
 
     // ─── Feedback ────────────────────────────────────────
-    // Anyone logged in can submit or read.
+    // Anyone logged in can submit or read. Admins can update status.
     match /feedback/{document} {
       allow read: if request.auth != null;
       allow create: if request.auth != null;
-      allow update: if false;  // immutable once submitted
+      allow update: if request.auth.token.email in [
+        "john.caraan@student.nhsau64.gov",
+        "dev@studyhub.local"
+      ];
       allow delete: if false;
     }
 
@@ -67,6 +74,14 @@ service cloud.firestore {
       // Users can only create/update their own document
       allow create: if request.auth.uid == userId;
       allow update: if request.auth.uid == userId;
+      allow delete: if false;
+    }
+
+    // ─── Quiz Scores (leaderboard) ──────────────────────
+    match /scores/{document} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth.uid == resource.data.uid;
       allow delete: if false;
     }
 

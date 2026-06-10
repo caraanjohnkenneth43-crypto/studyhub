@@ -1,26 +1,42 @@
 // One-time script: pushes content.json data into Firestore
-// Run with: node scripts/migrate-to-firebase.mjs
+// Now uses Admin SDK — required since Firestore rules were deployed.
+// Usage: node scripts/migrate-to-firebase.mjs
+// Requires FIREBASE_SERVICE_ACCOUNT in .env.local
 
 import { readFileSync } from "fs"
-import { initializeApp } from "firebase/app"
-import { getFirestore, doc, setDoc } from "firebase/firestore"
+import { resolve, dirname } from "path"
+import { fileURLToPath } from "url"
+import admin from "firebase-admin"
 
-const firebaseConfig = {
-  apiKey: "AIzaSyBSCxscPa2RZn-3UgA_L8d0xdr5S2i9Q1c",
-  authDomain: "studyhub-e1f30.firebaseapp.com",
-  projectId: "studyhub-e1f30",
-  storageBucket: "studyhub-e1f30.firebasestorage.app",
-  messagingSenderId: "343384331691",
-  appId: "1:343384331691:web:8485284f254bd8285b2eee",
-  measurementId: "G-C2GQKHDZ6D"
+const __dirname = dirname(fileURLToPath(import.meta.url))
+
+// ─── Load env ──────────────────────────────────────────────
+try {
+  const envRaw = readFileSync(resolve(__dirname, "..", ".env.local"), "utf-8")
+  for (const line of envRaw.split("\n")) {
+    const m = line.match(/^\s*([^#=]+?)\s*=\s*(.*?)\s*$/)
+    if (m) process.env[m[1]] = m[2]
+  }
+} catch {}
+
+// ─── Init Admin SDK ────────────────────────────────────────
+const fullJson = process.env.FIREBASE_SERVICE_ACCOUNT
+if (!fullJson) {
+  console.error("FATAL: FIREBASE_SERVICE_ACCOUNT not set.")
+  process.exit(1)
 }
 
-const app = initializeApp(firebaseConfig)
-const db = getFirestore(app)
+const serviceAccount = JSON.parse(fullJson)
+if (!admin.apps.length) {
+  admin.initializeApp({ credential: admin.credential.cert(serviceAccount) })
+}
+const db = admin.firestore()
 
-const data = JSON.parse(readFileSync("data/content.json", "utf-8"))
+// ─── Migrate data ──────────────────────────────────────────
+const dataPath = resolve(__dirname, "..", "data", "content.json")
+const data = JSON.parse(readFileSync(dataPath, "utf-8"))
 
-await setDoc(doc(db, "app", "data"), data)
+await db.doc("app/data").set(data)
 
 console.log("Data migrated to Firestore successfully!")
 console.log(`Subjects: ${data.subjects.length}`)

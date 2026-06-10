@@ -16,11 +16,8 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [showDev, setShowDev] = useState(false)
   const clickCount = useRef(0)
-  const { logIn, devLogIn } = useAuth()
+  const { logIn } = useAuth()
   const router = useRouter()
-
-  const isDev = typeof window !== "undefined" &&
-    (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -39,18 +36,14 @@ export default function LoginPage() {
     setLoading(true)
     setError("")
     try {
-      if (isDev) {
-        devLogIn(adminEmail)
-      } else {
-        const res = await fetch("/api/dev-token", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: adminEmail }),
-        })
-        const data = await res.json()
-        if (!res.ok) throw new Error(data.error)
-        await signInWithCustomToken(auth, data.token)
-      }
+      const res = await fetch("/api/dev-token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: adminEmail }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      await signInWithCustomToken(auth, data.token)
       router.push("/dashboard")
     } catch (err) {
       setError(err.message)
@@ -131,7 +124,7 @@ export default function LoginPage() {
             type="submit"
             disabled={loading}
             className="w-full py-2 text-white rounded-lg text-sm font-medium disabled:opacity-50 transition-colors"
-            style={{ background: "#2563eb" }}
+            style={{ background: "var(--c-accent)" }}
           >
             {loading ? "Signing in..." : "Log In"}
           </button>

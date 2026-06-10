@@ -93,7 +93,7 @@ export default function FeedbackWidget() {
                     type="submit"
                     disabled={sending || !message.trim()}
                     className="w-full py-2 text-white rounded-lg text-sm font-medium disabled:opacity-50 transition-colors"
-                    style={{ background: "#2563eb" }}
+                    style={{ background: "var(--c-accent)" }}
                   >
                     {sending ? "Sending..." : "Send Feedback"}
                   </button>

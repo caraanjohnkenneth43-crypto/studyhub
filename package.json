@@ -4,11 +4,17 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:emu": "node scripts/dev.mjs",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "setup": "node scripts/setup.mjs",
+    "db:backup": "node scripts/db-backup.mjs",
+    "db:restore": "node scripts/db-restore.mjs",
+    "db:migrate": "node scripts/migrate-to-firebase.mjs"
   },
   "dependencies": {
+    "dompurify": "^3.4.8",
     "firebase": "^12.14.0",
     "firebase-admin": "^13.10.0",
     "next": "16.2.7",

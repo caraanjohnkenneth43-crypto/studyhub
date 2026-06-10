@@ -1,6 +1,6 @@
 import { initializeApp, getApps } from "firebase/app"
-import { getFirestore } from "firebase/firestore"
-import { getAuth } from "firebase/auth"
+import { getFirestore, connectFirestoreEmulator } from "firebase/firestore"
+import { getAuth, connectAuthEmulator } from "firebase/auth"
 
 const firebaseConfig = {
   apiKey: "AIzaSyBSCxscPa2RZn-3UgA_L8d0xdr5S2i9Q1c",
@@ -13,5 +13,13 @@ const firebaseConfig = {
 }
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig)
-export const db = getFirestore(app)
-export const auth = getAuth(app)
+const db = getFirestore(app)
+const auth = getAuth(app)
+
+// ─── Connect to local emulators (set NEXT_PUBLIC_EMULATOR=true to enable) ──
+if (typeof window !== "undefined" && process.env.NEXT_PUBLIC_EMULATOR === "true") {
+  connectFirestoreEmulator(db, "127.0.0.1", 8080)
+  connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true })
+}
+
+export { db, auth }

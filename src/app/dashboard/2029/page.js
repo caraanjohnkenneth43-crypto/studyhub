@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useAuth } from "@/app/AuthProvider"
@@ -63,6 +63,7 @@ export default function ClassroomView() {
   const [activeSubjectId, setActiveSubjectId] = useState(null)
   const [sidebarView, setSidebarView] = useState("subjects")
   const [settings, setSettings] = useState(settingsDefaults)
+  const [contentTab, setContentTab] = useState("quizzes")
   const [feedbackMsg, setFeedbackMsg] = useState("")
   const [feedbackSent, setFeedbackSent] = useState(false)
   const [requestMsg, setRequestMsg] = useState("")
@@ -70,13 +71,7 @@ export default function ClassroomView() {
   const [requestSubject, setRequestSubject] = useState("")
   const [requestAction, setRequestAction] = useState("edit")
   const [requestTarget, setRequestTarget] = useState("quiz")
-  const [sidebarWidth, setSidebarWidth] = useState(() => {
-    try { return Number(localStorage.getItem("studyhub-sidebar-width")) || 280 } catch { return 280 }
-  })
-  const dragRef = useRef(false)
-  const startXRef = useRef(0)
-  const startWidthRef = useRef(0)
-  const widthRef = useRef(sidebarWidth)
+  const [sidebarWidth] = useState(280)
 
   useEffect(() => {
     if (!loading && !user) router.push("/login")
@@ -97,37 +92,6 @@ export default function ClassroomView() {
     setSettings(next)
     applySettings(next)
   }
-
-  const onDragStart = useCallback((e) => {
-    dragRef.current = true
-    startXRef.current = e.clientX
-    startWidthRef.current = sidebarWidth
-    document.body.style.cursor = "col-resize"
-    document.body.style.userSelect = "none"
-  }, [sidebarWidth])
-
-  useEffect(() => {
-    const onMove = (e) => {
-      if (!dragRef.current) return
-      const delta = e.clientX - startXRef.current
-      const newWidth = Math.max(200, Math.min(500, startWidthRef.current + delta))
-      widthRef.current = newWidth
-      setSidebarWidth(newWidth)
-    }
-    const onUp = () => {
-      if (!dragRef.current) return
-      dragRef.current = false
-      document.body.style.cursor = ""
-      document.body.style.userSelect = ""
-      try { localStorage.setItem("studyhub-sidebar-width", String(widthRef.current)) } catch {}
-    }
-    document.addEventListener("mousemove", onMove)
-    document.addEventListener("mouseup", onUp)
-    return () => {
-      document.removeEventListener("mousemove", onMove)
-      document.removeEventListener("mouseup", onUp)
-    }
-  }, [])
 
   const sendFeedback = async () => {
     if (!feedbackMsg.trim()) return
@@ -247,12 +211,12 @@ export default function ClassroomView() {
               feedbackSent ? (
                 <div className="text-center py-4">
                   <p className="text-sm font-medium">Sent! ✅</p>
-                  <button onClick={() => { setFeedbackSent(false); setFeedbackMsg("") }} className="text-xs mt-2 underline" style={{ color: "#2563eb" }}>Send another</button>
+                  <button onClick={() => { setFeedbackSent(false); setFeedbackMsg("") }} className="text-xs mt-2 underline" style={{ color: "var(--c-accent)" }}>Send another</button>
                 </div>
               ) : (
                 <div className="space-y-2">
                   <textarea value={feedbackMsg} onChange={e => setFeedbackMsg(e.target.value)} rows={4} className="w-full rounded-lg border text-sm p-2 resize-none" style={{ background: "var(--c-bg)", borderColor: "var(--c-border)", color: "var(--c-fg)" }} placeholder="Bugs, ideas..." />
-                  <button onClick={sendFeedback} disabled={!feedbackMsg.trim()} className="w-full text-xs text-white px-3 py-1.5 rounded-lg font-medium disabled:opacity-50" style={{ background: "#2563eb" }}>Send Feedback</button>
+                  <button onClick={sendFeedback} disabled={!feedbackMsg.trim()} className="w-full text-xs text-white px-3 py-1.5 rounded-lg font-medium disabled:opacity-50" style={{ background: "var(--c-accent)" }}>Send Feedback</button>
                 </div>
               )
             )}
@@ -268,120 +232,113 @@ export default function ClassroomView() {
       </aside>
       )}
 
-      {sidebarView === "subjects" && (
-      <aside
-        className={`sticky top-0 self-start border-r shrink-0 overflow-y-auto mobile-sidebar ${activeSubject ? "hidden sm:block" : ""}`}
-        style={{ background: "var(--c-card)", borderColor: "var(--c-border)", height: "100vh", width: sidebarWidth }}
-      >
-        <div className="p-4">
-          <h2 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: "var(--c-muted)" }}>Subjects</h2>
-          {subjects.length === 0 ? (
-            <p className="text-xs" style={{ color: "var(--c-subtle)" }}>No subjects yet.</p>
-          ) : (
-            <div className="gap-default flex flex-col">
-              {subjects.map((subject) => (
-                <button
-                  key={subject.id}
-                  onClick={() => setActiveSubjectId(subject.id)}
-                  className="w-full text-left rounded-lg border card-pad transition-colors"
-                  style={{
-                    background: activeSubjectId === subject.id ? "#dbeafe" : "var(--c-bg)",
-                    borderColor: activeSubjectId === subject.id ? "#93c5fd" : "var(--c-border)",
-                  }}
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xl">{subject.icon}</span>
-                    <span className="text-sm font-semibold" style={{ color: "var(--c-fg)" }}>{subject.name}</span>
-                  </div>
-                  <p className="text-xs leading-relaxed" style={{ color: "var(--c-muted)" }}>{subject.description}</p>
-                  <div className="flex gap-2 mt-2 text-xs" style={{ color: "var(--c-subtle)" }}>
-                    <span>{subject.quizzes.length} quiz{(subject.quizzes.length !== 1) ? "zes" : ""}</span>
-                    <span>{subject.links.length} link{(subject.links.length !== 1) ? "s" : ""}</span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </aside>
-      )}
-
-      <div className="w-1 shrink-0 cursor-col-resize hidden sm:block hover:bg-blue-400/30" onMouseDown={onDragStart} />
-
       <main className="flex-1 p-6 overflow-y-auto mobile-px pb-16 sm:pb-6" style={{ height: "100vh" }}>
-          {!activeSubject ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center" style={{ color: "var(--c-subtle)" }}>
-                <p className="text-lg">Select a subject</p>
-                <p className="text-sm mt-1">Choose a subject from the left sidebar.</p>
+        {!activeSubject ? (
+          <div>
+            <header className="flex items-center justify-between mb-6">
+              <h1 className="text-xl font-bold" style={{ color: "var(--c-fg)" }}>Class of 2029</h1>
+              <span className="text-xs" style={{ color: "var(--c-muted)" }}>{subjects.length} subject{(subjects.length !== 1) ? "s" : ""}</span>
+            </header>
+            {subjects.length === 0 ? (
+              <div className="flex items-center justify-center h-64" style={{ color: "var(--c-subtle)" }}>
+                <p>No subjects yet.</p>
               </div>
-            </div>
-          ) : (
-            <div className="space-y-6 max-w-3xl">
-              <div className="sm:hidden mb-2">
-                <button onClick={() => setActiveSubjectId(null)} className="text-sm flex items-center gap-1" style={{ color: "var(--c-muted)" }}>
-                  &larr; All subjects
-                </button>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {subjects.map((subject) => (
+                  <button
+                    key={subject.id}
+                    onClick={() => setActiveSubjectId(subject.id)}
+                    className="rounded-xl border overflow-hidden text-left transition-all hover:shadow-md hover:-translate-y-0.5 active:translate-y-0"
+                    style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }}
+                  >
+                    <div className="h-20 flex items-end p-4" style={{ background: "linear-gradient(135deg, var(--c-accent), #7c3aed)" }}>
+                      <span className="text-3xl">{subject.icon}</span>
+                    </div>
+                    <div className="p-4">
+                      <h3 className="font-semibold text-sm" style={{ color: "var(--c-fg)" }}>{subject.name}</h3>
+                      <p className="text-xs mt-1 line-clamp-2" style={{ color: "var(--c-muted)" }}>{subject.description}</p>
+                      <div className="flex gap-3 mt-3 text-xs" style={{ color: "var(--c-subtle)" }}>
+                        <span>📝 {subject.quizzes.length}</span>
+                        <span>🔗 {subject.links.length}</span>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="max-w-3xl mx-auto">
+            <button onClick={() => setActiveSubjectId(null)} className="text-sm flex items-center gap-1 mb-4" style={{ color: "var(--c-muted)" }}>
+              &larr; All subjects
+            </button>
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-14 h-14 rounded-xl flex items-center justify-center text-2xl" style={{ background: "linear-gradient(135deg, var(--c-accent), #7c3aed)" }}>
+                <span>{activeSubject.icon}</span>
               </div>
               <div>
-                <div className="flex items-center gap-3 mb-1">
-                  <span className="text-3xl">{activeSubject.icon}</span>
-                  <div>
-                    <h2 className="text-2xl font-bold" style={{ color: "var(--c-fg)" }}>{activeSubject.name}</h2>
-                    <p className="text-sm" style={{ color: "var(--c-muted)" }}>{activeSubject.description}</p>
-                  </div>
-                </div>
+                <h2 className="text-2xl font-bold" style={{ color: "var(--c-fg)" }}>{activeSubject.name}</h2>
+                <p className="text-sm" style={{ color: "var(--c-muted)" }}>{activeSubject.description}</p>
               </div>
+            </div>
 
-            <section>
-              <h3 className="text-lg font-semibold mb-3 flex items-center gap-2" style={{ color: "var(--c-fg)" }}>
-                <span className="text-xl">📝</span> Quizzes
-              </h3>
-              {activeSubject.quizzes.length === 0 ? (
-                <p className="text-sm" style={{ color: "var(--c-subtle)" }}>No quizzes yet.</p>
-              ) : (
-                <div className="gap-default flex flex-col">
-                  {activeSubject.quizzes.map((quiz) => (
-                    <Link
-                      key={quiz.id}
-                      href={`/quiz/${quiz.id}`}
-                      className="block rounded-lg border-l-4 card-pad subject-card"
-                      style={{ background: "var(--c-card)", borderColor: "var(--c-border)", borderLeftColor: "#3b82f6" }}
-                    >
-                      <h4 className="font-medium" style={{ color: "var(--c-fg)" }}>{quiz.title}</h4>
-                      <p className="text-xs mt-1" style={{ color: "var(--c-subtle)" }}>{quiz.questions.length} question{(quiz.questions.length !== 1) ? "s" : ""}</p>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </section>
+            <div className="flex gap-4 border-b pb-3 mb-6" style={{ borderColor: "var(--c-border)" }}>
+              <button onClick={() => setContentTab("quizzes")} className="text-sm font-medium pb-1" style={{
+                color: contentTab === "quizzes" ? "var(--c-fg)" : "var(--c-subtle)",
+                borderBottom: contentTab === "quizzes" ? "2px solid #3b82f6" : "2px solid transparent",
+              }}>📝 Quizzes</button>
+              <button onClick={() => setContentTab("links")} className="text-sm font-medium pb-1" style={{
+                color: contentTab === "links" ? "var(--c-fg)" : "var(--c-subtle)",
+                borderBottom: contentTab === "links" ? "2px solid #3b82f6" : "2px solid transparent",
+              }}>🔗 Resources & Links</button>
+            </div>
 
-            <hr className="border-t" style={{ borderColor: "var(--c-border)" }} />
+            {contentTab === "quizzes" && (
+              <section>
+                {activeSubject.quizzes.length === 0 ? (
+                  <p className="text-sm" style={{ color: "var(--c-subtle)" }}>No quizzes yet.</p>
+                ) : (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {activeSubject.quizzes.map((quiz) => (
+                      <Link
+                        key={quiz.id}
+                        href={`/quiz/${quiz.id}`}
+                        className="block rounded-xl border p-4 transition-all hover:shadow-sm hover:-translate-y-0.5"
+                        style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }}
+                      >
+                        <h4 className="font-medium text-sm" style={{ color: "var(--c-fg)" }}>{quiz.title}</h4>
+                        <p className="text-xs mt-1" style={{ color: "var(--c-subtle)" }}>{quiz.questions.length} question{(quiz.questions.length !== 1) ? "s" : ""}</p>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </section>
+            )}
 
-            <section>
-              <h3 className="text-lg font-semibold mb-3 flex items-center gap-2" style={{ color: "var(--c-fg)" }}>
-                <span className="text-xl">🔗</span> Resources & Links
-              </h3>
-              {activeSubject.links.length === 0 ? (
-                <p className="text-sm" style={{ color: "var(--c-subtle)" }}>No links yet.</p>
-              ) : (
-                <div className="gap-default flex flex-col">
-                  {activeSubject.links.map((link, i) => (
-                    <a
-                      key={i}
-                      href={link.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block rounded-lg border-l-4 card-pad subject-card"
-                      style={{ background: "var(--c-card)", borderColor: "var(--c-border)", borderLeftColor: "#16a34a" }}
-                    >
-                      <h4 className="font-medium underline" style={{ color: "#3b82f6" }}>{link.title}</h4>
-                      <p className="text-xs mt-1" style={{ color: "var(--c-subtle)" }}>{link.description}</p>
-                    </a>
-                  ))}
-                </div>
-              )}
-            </section>
+            {contentTab === "links" && (
+              <section>
+                {activeSubject.links.length === 0 ? (
+                  <p className="text-sm" style={{ color: "var(--c-subtle)" }}>No links yet.</p>
+                ) : (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {activeSubject.links.map((link, i) => (
+                      <a
+                        key={i}
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block rounded-xl border p-4 transition-all hover:shadow-sm hover:-translate-y-0.5"
+                        style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }}
+                      >
+                        <h4 className="font-medium text-sm underline" style={{ color: "#3b82f6" }}>{link.title}</h4>
+                        <p className="text-xs mt-1" style={{ color: "var(--c-subtle)" }}>{link.description}</p>
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </section>
+            )}
           </div>
         )}
       </main>
