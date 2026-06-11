@@ -64,7 +64,22 @@ export default function DevConsole() {
           const res = await fetch("/api/chat/rooms")
           const data = await res.json()
           if (data.rooms?.length) {
-            data.rooms.forEach(r => addLog(`[${r.type}] ${r.name} (${r.id}) — ${r.messageCount || 0} msgs`, "info"))
+            data.rooms.forEach(r => {
+              const lines = []
+              lines.push(`[${r.type}] ${r.name} (${r.id})`)
+              lines.push(`  Messages: ${r.messageCount || 0}`)
+              if (r.type === "private") {
+                lines.push(`  Password: ${r.password || "(none set)"}`)
+              }
+              if (r.blocked?.length) {
+                lines.push(`  Blocked: ${r.blocked.join(", ")}`)
+              }
+              // Users with access = all users minus blocked (for private rooms)
+              // This is a simplified view - actual access is password-based
+              lines.push(`  Access: ${r.type === "private" ? "Password holders (minus blocked)" : "All authenticated users"}`)
+              lines.forEach(l => addLog(l, "info"))
+              addLog("---", "info")
+            })
           } else {
             addLog("No rooms found", "info")
           }
