@@ -7,6 +7,7 @@ import { useAuth, allowedAdmins } from "@/app/AuthProvider"
 import SettingsPanel from "@/app/SettingsPanel"
 import { useActiveRoom } from "@/app/ChatNotificationProvider"
 import { COLORS } from "@/lib/constants"
+import Navbar from "@/app/Navbar"
 import { useRoom, useMessages, useUserMap, useAutoScroll, useScrollDetection, useSendTextMessage, useSendImageMessage, useSendStickerMessage, useStickers, useRoomMembers, useDeleteRoom, useBlockUser } from "@/lib/chat/hooks"
 import { resolveMessageEmail, getMessageNameStyle } from "@/lib/chat/gradients"
 import { UserNameTag } from "@/app/UserTag"
@@ -201,42 +202,21 @@ export default function ChatRoom() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "var(--c-bg)" }}>
-      <header style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }} className="border-b sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button onClick={() => router.back()} className="text-sm px-2 py-1 rounded transition-colors hover:bg-black/5" style={{ color: "var(--c-muted)" }}>&larr;</button>
-            <span className="text-lg font-bold" style={{ color: "var(--c-fg)" }}># {room?.name || "..."}</span>
-            <Link href="/dashboard" className="text-xs px-2 py-0.5 rounded" style={{ color: "var(--c-subtle)" }}>Dashboard</Link>
-            {messagesError && (
-              <span className="text-xs px-2 py-0.5 rounded" style={{ background: "#ef4444", color: "white" }}>
-                Sync error: {messagesError}
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-xs hidden sm:inline" style={{ color: "var(--c-subtle)" }}>{user.email}</span>
-            {room && room.createdBy === user.uid && !confirmDelete && (
-              <button onClick={() => setConfirmDelete(true)} className="text-xs" style={{ color: COLORS.RED }}>Delete room</button>
-            )}
-            {room && room.createdBy === user.uid && confirmDelete && (
-              <span className="flex items-center gap-2">
-                <button onClick={deleteRoom} className="text-xs font-semibold" style={{ color: COLORS.RED }}>Confirm</button>
-                <button onClick={() => setConfirmDelete(false)} className="text-xs" style={{ color: "var(--c-subtle)" }}>Cancel</button>
-              </span>
-            )}
-            {room && room.createdBy === user.uid && (
-              <button onClick={() => setShowBlockPanel(!showBlockPanel)} className="text-xs" style={{ color: "var(--c-subtle)" }}>Manage</button>
-            )}
-            {room && verified && (
-              <button onClick={() => setShowMembersPanel(!showMembersPanel)} className="text-xs px-2 py-1 rounded hover:bg-black/5 transition-colors" style={{ color: "var(--c-fg)" }}>
-                👥 {members.length}
-              </button>
-            )}
-            <SettingsPanel />
-            <button onClick={logOut} className="text-xs" style={{ color: "var(--c-subtle)" }}>Log out</button>
-          </div>
+      <Navbar
+        room={room}
+        onBack={() => router.back()}
+        onMembersToggle={() => setShowMembersPanel(!showMembersPanel)}
+        showMembersPanel={showMembersPanel}
+        membersCount={members.length}
+      />
+
+      {messagesError && (
+        <div className="max-w-6xl mx-auto px-4 py-1">
+          <span className="text-xs px-2 py-0.5 rounded" style={{ background: "#ef4444", color: "white" }}>
+            Sync error: {messagesError}
+          </span>
         </div>
-      </header>
+      )}
 
       {showBlockPanel && room && room.createdBy === user.uid && (
         <div className="relative z-10 max-w-6xl mx-auto w-full px-4">
