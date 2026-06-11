@@ -4,8 +4,9 @@ import { useState, useEffect, useRef } from "react"
 import { useAuth } from "./AuthProvider"
 import { updateProfile } from "firebase/auth"
 import { auth } from "@/lib/firebase"
-import { collection, query, onSnapshot } from "firebase/firestore"
+import { doc, setDoc, getDoc } from "firebase/firestore"
 import { db } from "@/lib/firebase"
+import { collection, query, onSnapshot } from "firebase/firestore"
 
 const SETTINGS_KEY = "studyhub-settings"
 
@@ -13,6 +14,7 @@ const defaults = {
   dark: false,
   fontSize: 16,
   theme: "blue",
+  pfpSize: "medium",
 }
 
 const THEMES = [
@@ -48,7 +50,7 @@ function apply(settings) {
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
 }
 
-export { defaults as settingsDefaults, load as loadSettings, apply as applySettings }
+export { defaults as settingsDefaults, load as loadSettings, apply as applySettings, THEMES, SETTINGS_KEY }
 
 function playNotificationSound() {
   try {
@@ -88,12 +90,26 @@ function formatDuration(seconds) {
   return parts.join(" ") || "<1m"
 }
 
+function getAvatarColor(email) {
+  const colors = [
+    "#3b82f6", "#ef4444", "#22c55e", "#f59e0b", "#8b5cf6",
+    "#ec4899", "#06b6d4", "#84cc16", "#f97316", "#6366f1",
+  ]
+  if (!email) return colors[0]
+  let hash = 0
+  for (let i = 0; i < email.length; i++) hash = email.charCodeAt(i) + ((hash << 5) - hash)
+  return colors[Math.abs(hash) % colors.length]
+}
+
 export function SettingsContent({ settings, onUpdate, user }) {
   const [now, setNow] = useState(new Date())
   const [rooms, setRooms] = useState([])
   const [accountAge, setAccountAge] = useState("Unknown")
   const [displayName, setDisplayName] = useState(user?.displayName || "")
   const [displayNameSaving, setDisplayNameSaving] = useState(false)
+  const [avatar, setAvatar] = useState(user?.avatar || "")
+  const [avatarSaving, setAvatarSaving] = useState(false)
+  const [avatarPreview, setAvatarPreview] = useState("")
   const notifSettings = settings.notifications || { enabled: false, sound: true, popup: true, rooms: [] }
 
   useEffect(() => {
@@ -121,6 +137,16 @@ export function SettingsContent({ settings, onUpdate, user }) {
     return unsub
   }, [])
 
+  // Load avatar from Firestore
+  useEffect(() => {
+    if (!user) return
+    getDoc(doc(db, "users", user.uid)).then(snap => {
+      if (snap.exists() && snap.data().avatar) {
+        setAvatar(snap.data().avatar)
+      }
+    })
+  }, [user])
+
   const updateNotif = (key, value) => {
     onUpdate("notifications", { ...notifSettings, [key]: value })
   }
@@ -134,93 +160,182 @@ export function SettingsContent({ settings, onUpdate, user }) {
   const today = now.toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric" })
   const time = now.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit" })
 
+  const handleAvatarUpload = (file) => {
+    if (!file) return
+    if (!file.type.startsWith("image/")) {
+      alert("Please select an image file")
+      return
+    }
+    if (file.size > 500000) {
+      alert("Image too large (max 500KB)")
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const base64 = e.target.result
+      setAvatarPreview(base64)
+      setAvatarSaving(true)
+      setDoc(doc(db, "users", user.uid), { avatar: base64 }, { merge: true })
+        .then(() => {
+          setAvatar(base64)
+          setAvatarSaving(false)
+          setAvatarPreview("")
+        })
+        .catch(err => {
+          console.error("Failed to save avatar:", err)
+          alert("Failed to save avatar")
+          setAvatarSaving(false)
+          setAvatarPreview("")
+        })
+    }
+    reader.readAsDataURL(file)
+  }
+
   return (
     <div className="space-y-4">
-      <h3 className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--c-muted)" }}>
-        Preferences
-      </h3>
-
-      <label className="flex items-center justify-between text-sm">
-        <span style={{ color: "var(--c-fg)" }}>Dark Mode</span>
-        <button onClick={() => onUpdate("dark", !settings.dark)} className="text-base">
-          {settings.dark ? "☀️" : "🌙"}
-        </button>
-      </label>
-
+      {/* Account Settings Section */}
       <div>
-        <span className="text-sm block mb-1" style={{ color: "var(--c-fg)" }}>Font Size — {settings.fontSize}px</span>
-        <input
-          type="range"
-          min="12"
-          max="24"
-          step="1"
-          value={settings.fontSize}
-          onChange={e => onUpdate("fontSize", Number(e.target.value))}
-          className="w-full"
-        />
-      </div>
-
-      <div>
-        <span className="text-sm block mb-1" style={{ color: "var(--c-fg)" }}>Theme</span>
-        <div className="flex gap-2 flex-wrap">
-          {THEMES.map(t => (
-            <button key={t.id} onClick={() => onUpdate("theme", t.id)}
-              className="w-6 h-6 rounded-full border-2 transition-transform"
-              style={{
-                background: t.color,
-                borderColor: settings.theme === t.id ? "var(--c-fg)" : "transparent",
-                transform: settings.theme === t.id ? "scale(1.2)" : "scale(1)",
-              }}
-              title={t.label}
-            />
-          ))}
-        </div>
-      </div>
-
-      <hr className="border-t" style={{ borderColor: "var(--c-border)" }} />
-
-      <div>
-        <h4 className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--c-muted)" }}>
-          Account Status
-        </h4>
-        <div className="space-y-1 text-sm" style={{ color: "var(--c-muted)" }}>
-          <div className="flex items-center gap-2">
-            <span className="font-medium shrink-0" style={{ color: "var(--c-fg)" }}>Name:</span>
-            <input value={displayName} onChange={e => setDisplayName(e.target.value)}
-              className="flex-1 px-2 py-0.5 rounded text-sm border min-w-0"
-              style={{ background: "var(--c-bg)", borderColor: "var(--c-border)", color: "var(--c-fg)" }}
-            />
-            <button onClick={async () => {
-              if (!displayName.trim() || displayNameSaving) return
-              setDisplayNameSaving(true)
-              try {
-                await updateProfile(auth.currentUser, { displayName: displayName.trim() })
-                await fetch("/api/users", {
-                  method: "PUT",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ uid: user.uid, displayName: displayName.trim() }),
-                })
-              } catch {}
-              setDisplayNameSaving(false)
-            }} disabled={displayNameSaving || !displayName.trim()}
-              className="text-xs px-2 py-0.5 rounded text-white font-medium disabled:opacity-50 shrink-0"
-              style={{ background: "var(--c-accent)" }}>
-              {displayNameSaving ? "..." : "Save"}
-            </button>
+        <h3 className="text-xs font-semibold uppercase tracking-wider mb-3 flex items-center gap-2" style={{ color: "var(--c-muted)" }}>
+          <span>👤</span> Account
+        </h3>
+        <div className="space-y-3">
+          {/* Avatar */}
+          <div className="flex items-center gap-4">
+            <div className="relative w-16 h-16 shrink-0">
+              {(avatarPreview || avatar) ? (
+                <img src={avatarPreview || avatar} alt="Avatar" className="w-full h-full rounded-full object-cover" />
+              ) : (
+                <div className="w-full h-full rounded-full flex items-center justify-center text-2xl font-medium text-white" style={{ background: getAvatarColor(user?.email) }}>
+                  {user?.displayName?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || "?"}
+                </div>
+              )}
+              <label className="absolute bottom-0 right-0 w-7 h-7 rounded-full flex items-center justify-center cursor-pointer text-white text-sm" style={{ background: "var(--c-accent)", border: "2px solid var(--c-card)" }}>
+                📷
+                <input type="file" accept="image/*" onChange={e => e.target.files[0] && handleAvatarUpload(e.target.files[0])} className="hidden" disabled={avatarSaving} />
+              </label>
+            </div>
+            <div className="flex-1 min-w-0">
+              {avatarSaving && <span className="text-xs" style={{ color: "var(--c-accent)" }}>Saving...</span>}
+            </div>
           </div>
-          <p><span className="font-medium" style={{ color: "var(--c-fg)" }}>Email:</span> {user?.email || "—"}</p>
-          <p><span className="font-medium" style={{ color: "var(--c-fg)" }}>Account Age:</span> {accountAge}</p>
-          <p><span className="font-medium" style={{ color: "var(--c-fg)" }}>Today:</span> {today}</p>
-          <p><span className="font-medium" style={{ color: "var(--c-fg)" }}>Time:</span> {time}</p>
+
+          {/* Display Name */}
+          <label className="flex flex-col gap-1.5">
+            <span className="text-sm font-medium" style={{ color: "var(--c-fg)" }}>Display Name</span>
+            <div className="flex items-center gap-2">
+              <input 
+                value={displayName} 
+                onChange={e => setDisplayName(e.target.value)}
+                placeholder="Enter your name"
+                className="flex-1 px-2 py-1.5 rounded-lg border text-sm min-w-0"
+                style={{ background: "var(--c-bg)", borderColor: "var(--c-border)", color: "var(--c-fg)" }}
+              />
+              <button 
+                onClick={async () => {
+                  if (!displayName.trim() || displayNameSaving) return
+                  setDisplayNameSaving(true)
+                  try {
+                    await updateProfile(auth.currentUser, { displayName: displayName.trim() })
+                    await fetch("/api/users", {
+                      method: "PUT",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ uid: user.uid, displayName: displayName.trim() }),
+                    })
+                  } catch {}
+                  setDisplayNameSaving(false)
+                }} 
+                disabled={displayNameSaving || !displayName.trim()}
+                className="text-xs px-3 py-1.5 rounded-lg text-white font-medium disabled:opacity-50 shrink-0"
+                style={{ background: "var(--c-accent)" }}
+              >
+                {displayNameSaving ? "..." : "Save"}
+              </button>
+            </div>
+          </label>
+
+          {/* Email & Account Info */}
+          <div className="space-y-1 pt-2 border-t" style={{ borderColor: "var(--c-border)" }}>
+            <p className="text-sm flex items-center gap-2"><span className="font-medium shrink-0" style={{ color: "var(--c-fg)" }}>Email:</span> <span style={{ color: "var(--c-muted)" }}>{user?.email || "—"}</span></p>
+            <p className="text-sm flex items-center gap-2"><span className="font-medium shrink-0" style={{ color: "var(--c-fg)" }}>Account Age:</span> <span style={{ color: "var(--c-muted)" }}>{accountAge}</span></p>
+          </div>
         </div>
       </div>
 
-      <hr className="border-t" style={{ borderColor: "var(--c-border)" }} />
+      <hr className="border-t my-4" style={{ borderColor: "var(--c-border)" }} />
 
+      {/* Display Settings Section */}
       <div>
-        <h4 className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--c-muted)" }}>
-          Notifications
-        </h4>
+        <h3 className="text-xs font-semibold uppercase tracking-wider mb-3 flex items-center gap-2" style={{ color: "var(--c-muted)" }}>
+          <span>🎨</span> Display
+        </h3>
+        <div className="space-y-4">
+          <label className="flex items-center justify-between text-sm">
+            <span style={{ color: "var(--c-fg)" }}>Dark Mode</span>
+            <button onClick={() => onUpdate("dark", !settings.dark)} className="text-base">
+              {settings.dark ? "☀️" : "🌙"}
+            </button>
+          </label>
+
+          <div>
+            <span className="text-sm block mb-1" style={{ color: "var(--c-fg)" }}>Font Size — {settings.fontSize}px</span>
+            <input
+              type="range"
+              min="12"
+              max="24"
+              step="1"
+              value={settings.fontSize}
+              onChange={e => onUpdate("fontSize", Number(e.target.value))}
+              className="w-full"
+            />
+          </div>
+
+          <div>
+            <span className="text-sm block mb-1" style={{ color: "var(--c-fg)" }}>Theme</span>
+            <p className="text-xs mb-1" style={{ color: "var(--c-subtle)" }}>Also available in the top navigation bar</p>
+            <div className="flex gap-2 flex-wrap">
+              {THEMES.map(t => (
+                <button key={t.id} onClick={() => onUpdate("theme", t.id)}
+                  className="w-6 h-6 rounded-full border-2 transition-transform"
+                  style={{
+                    background: t.color,
+                    borderColor: settings.theme === t.id ? "var(--c-fg)" : "transparent",
+                    transform: settings.theme === t.id ? "scale(1.2)" : "scale(1)",
+                  }}
+                  title={t.label}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <h4 className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--c-muted)" }}>
+              PFP Size in Lobbies
+            </h4>
+            <div className="flex gap-2">
+              {["small", "medium", "large"].map(size => (
+                <button key={size} onClick={() => onUpdate("pfpSize", size)} 
+                  className={`px-2 py-1 rounded text-xs font-medium transition-colors ${settings.pfpSize === size ? "" : "opacity-50"}`}
+                  style={{
+                    background: settings.pfpSize === size ? "var(--c-accent)" : "var(--c-bg)",
+                    color: settings.pfpSize === size ? "white" : "var(--c-fg)",
+                    borderColor: "var(--c-border)",
+                  }}
+                >
+                  {size.charAt(0).toUpperCase() + size.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <hr className="border-t my-4" style={{ borderColor: "var(--c-border)" }} />
+
+      {/* Notifications Section */}
+      <div>
+        <h3 className="text-xs font-semibold uppercase tracking-wider mb-3 flex items-center gap-2" style={{ color: "var(--c-muted)" }}>
+          <span>🔔</span> Notifications
+        </h3>
         <div className="space-y-2">
           <label className="flex items-center justify-between text-sm">
             <span style={{ color: "var(--c-fg)" }}>Enabled</span>
@@ -334,7 +449,7 @@ export default function SettingsPanel({ children, onOpen, noPopup }) {
 
       {!noPopup && open && (
         <div
-          className="absolute right-0 top-full mt-2 w-60 rounded-xl border shadow-lg p-4 z-50 max-h-[70vh] overflow-y-auto"
+          className="absolute right-0 top-full mt-2 w-80 rounded-xl border shadow-lg p-4 z-50 max-h-[70vh] overflow-y-auto"
           style={{
             background: "var(--c-card)",
             borderColor: "var(--c-border)",
