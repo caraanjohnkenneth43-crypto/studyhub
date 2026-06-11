@@ -274,8 +274,9 @@ export function useStickers(userId) {
  * Fetch room members with presence status.
  * For public rooms: all authenticated users who have sent messages or are in presence.
  * For private rooms: users with password (minus blocked) from messages + presence.
+ * @param {object} uidToEmail - Optional map of uid→email to resolve emails for messages that lack userEmail.
  */
-export function useRoomMembers(roomId, room, verified) {
+export function useRoomMembers(roomId, room, verified, uidToEmail = {}) {
   const [members, setMembers] = useState([])
 
   useEffect(() => {
@@ -301,14 +302,14 @@ export function useRoomMembers(roomId, room, verified) {
       const users = new Map()
       snap.docs.forEach(d => {
         const data = d.data()
-        if (data.userId && data.userEmail) {
+        if (data.userId) {
           const existing = users.get(data.userId)
-          // Keep the most recent message timestamp
           if (!existing || (data.timestamp && data.timestamp.seconds > existing.lastMessageTime)) {
+            const email = data.userEmail || uidToEmail[data.userId] || ""
             users.set(data.userId, {
               uid: data.userId,
-              email: data.userEmail,
-              displayName: data.userName,
+              email,
+              displayName: data.userName || email.split("@")[0] || "Unknown",
               lastMessageTime: data.timestamp ? data.timestamp.seconds * 1000 : 0,
             })
           }
@@ -319,16 +320,21 @@ export function useRoomMembers(roomId, room, verified) {
     })
     
     // Subscribe to presence
+    // Presence docs use doc ID = uid, with { lastActive: Timestamp }
     presenceUnsub = onSnapshot(presenceQuery, snap => {
       const presence = new Map()
+      const now = Date.now()
       snap.docs.forEach(d => {
         const data = d.data()
-        if (data.uid && data.isActive) {
-          presence.set(data.uid, {
-            isActive: data.isActive,
-            lastSeen: data.lastSeen ? data.lastSeen.toMillis() : Date.now(),
-            displayName: data.displayName,
-            email: data.email,
+        const lastActive = data.lastActive
+        if (lastActive) {
+          const lastActiveMs = typeof lastActive.toMillis === "function" ? lastActive.toMillis() : now
+          const isActive = (now - lastActiveMs) < 5 * 60 * 1000
+          presence.set(d.id, {
+            isActive,
+            lastSeen: lastActiveMs,
+            displayName: data.displayName || data.email?.split("@")[0] || "Unknown",
+            email: data.email || "",
           })
         }
       })
@@ -339,6 +345,7 @@ export function useRoomMembers(roomId, room, verified) {
     const updateMembers = () => {
       const allUserIds = new Set([...messageUsers.keys(), ...presenceData.keys()])
       const memberList = []
+      const now = Date.now()
       
       for (const uid of allUserIds) {
         const msgData = messageUsers.get(uid)
@@ -349,19 +356,17 @@ export function useRoomMembers(roomId, room, verified) {
           continue
         }
         
-        const email = msgData?.email || presData?.email
-        const displayName = msgData?.displayName || presData?.displayName || email?.split("@")[0] || "Unknown"
+        const email = msgData?.email || presData?.email || ""
+        const displayName = msgData?.displayName || presData?.displayName || email.split("@")[0] || "Unknown"
         const lastMessageTime = msgData?.lastMessageTime || 0
         const presenceTime = presData?.lastSeen || 0
         const lastActive = Math.max(lastMessageTime, presenceTime)
         
-        let status = "offline" // grey
-        if (presData?.isActive && (Date.now() - lastActive) < 5 * 60 * 1000) {
-          status = "active" // green
-        } else if (lastActive > 0 && (Date.now() - lastActive) < 5 * 60 * 1000) {
-          status = "active" // green - recent message
-        } else if (lastActive > 0 && (Date.now() - lastActive) < 30 * 60 * 1000) {
-          status = "idle" // yellow
+        let status = "offline"
+        if (lastActive > 0 && (now - lastActive) < 5 * 60 * 1000) {
+          status = "active"
+        } else if (lastActive > 0 && (now - lastActive) < 30 * 60 * 1000) {
+          status = "idle"
         }
         
         memberList.push({
@@ -373,7 +378,6 @@ export function useRoomMembers(roomId, room, verified) {
         })
       }
       
-      // Sort: active first, then by last active
       memberList.sort((a, b) => {
         const statusOrder = { active: 0, idle: 1, offline: 2 }
         if (statusOrder[a.status] !== statusOrder[b.status]) {
@@ -389,7 +393,7 @@ export function useRoomMembers(roomId, room, verified) {
       messagesUnsub?.()
       presenceUnsub?.()
     }
-  }, [roomId, room, verified])
+  }, [roomId, room, verified, uidToEmail])
   
   return members
 }

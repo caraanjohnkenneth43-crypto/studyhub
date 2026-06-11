@@ -89,7 +89,7 @@ export default function ChatRoom() {
   const { messages, error: messagesError } = useMessages(id, verified)
   const { contributors, uidToEmail } = useUserMap()
   const { stickers, addSticker } = useStickers(user?.uid)
-  const members = useRoomMembers(id, room, verified)
+  const members = useRoomMembers(id, room, verified, uidToEmail)
   useAutoScroll(messages, bottomRef)
   const showScrollBtn = useScrollDetection(messagesRef)
   const sendText = useSendTextMessage(id, user, text, setText)

@@ -26,6 +26,10 @@ export default function DevConsole() {
     setLogs(prev => [...prev, { text, type: type || "info", time: new Date().toLocaleTimeString() }])
   }
 
+  const authHeaders = () => ({
+    Authorization: `Bearer ${user?.accessToken}`,
+  })
+
   const runCommand = async (cmd) => {
     addLog(`> ${cmd}`, "command")
 
@@ -38,8 +42,8 @@ export default function DevConsole() {
         addLog("  help              — Show this help", "info")
         addLog("  logs              — Show session log count", "info")
         addLog("  whoami            — Show current user info", "info")
-        addLog("  rooms             — List all chat rooms", "info")
-        addLog("  room-password <id> — Reveal password for a private room (if stored)", "info")
+        addLog("  rooms             — List all chat rooms with names, IDs, users", "info")
+        addLog("  room-password <id> — Reveal password for a private room", "info")
         addLog("  clear             — Clear console", "info")
         addLog("  users count       — Show total registered users", "info")
         break
@@ -61,21 +65,22 @@ export default function DevConsole() {
 
       case "rooms":
         try {
-          const res = await fetch("/api/chat/rooms")
+          const res = await fetch("/api/chat/rooms", { headers: authHeaders() })
           const data = await res.json()
           if (data.rooms?.length) {
             data.rooms.forEach(r => {
               const lines = []
               lines.push(`[${r.type}] ${r.name} (${r.id})`)
-              lines.push(`  Messages: ${r.messageCount || 0}`)
+              lines.push(`  Messages: ${r.messageCount || 0}  Members: ${r.memberCount || 0}`)
+              if (r.members?.length) {
+                lines.push(`  Users: ${r.members.join(", ")}`)
+              }
               if (r.type === "private") {
                 lines.push(`  Password: ${r.password || "(none set)"}`)
               }
               if (r.blocked?.length) {
                 lines.push(`  Blocked: ${r.blocked.join(", ")}`)
               }
-              // Users with access = all users minus blocked (for private rooms)
-              // This is a simplified view - actual access is password-based
               lines.push(`  Access: ${r.type === "private" ? "Password holders (minus blocked)" : "All authenticated users"}`)
               lines.forEach(l => addLog(l, "info"))
               addLog("---", "info")
@@ -94,7 +99,7 @@ export default function DevConsole() {
           return
         }
         try {
-          const res = await fetch(`/api/chat/rooms/${parts[1]}`)
+          const res = await fetch(`/api/chat/rooms/${parts[1]}`, { headers: authHeaders() })
           const data = await res.json()
           if (data.password) {
             addLog(`Password for "${data.name}": ${data.password}`, "success")
@@ -109,7 +114,7 @@ export default function DevConsole() {
       case "users":
         if (parts[1] === "count") {
           try {
-            const res = await fetch("/api/users")
+            const res = await fetch("/api/users", { headers: authHeaders() })
             const data = await res.json()
             addLog(`Total users: ${data.users?.length || data.length || 0}`, "info")
           } catch {

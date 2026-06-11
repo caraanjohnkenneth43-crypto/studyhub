@@ -10,19 +10,42 @@ export async function GET(request) {
     const snap = await adminDB.collection("chatRooms").get()
     const rooms = await Promise.all(snap.docs.map(async (doc) => {
       const data = { id: doc.id, ...doc.data() }
+      const msgCol = adminDB.collection("chatRooms").doc(doc.id).collection("messages")
+
       // Get message count for this room
       let messageCount = 0
       try {
-        const msgSnap = await adminDB.collection("chatRooms").doc(doc.id).collection("messages").count().get()
+        const msgSnap = await msgCol.count().get()
         messageCount = msgSnap.data().count
       } catch {
-        // fallback: limit query if count not supported
-        const msgSnap = await adminDB.collection("chatRooms").doc(doc.id).collection("messages").limit(1000).get()
+        const msgSnap = await msgCol.limit(1000).get()
         messageCount = msgSnap.docs.length
       }
+
+      // Get unique users who have sent messages in this room
+      let memberCount = 0
+      let members = []
+      try {
+        const msgSnap = await msgCol.limit(1000).get()
+        const userMap = new Map()
+        msgSnap.docs.forEach(m => {
+          const d = m.data()
+          if (d.userId) {
+            const name = d.userName || d.userEmail?.split("@")[0] || "Unknown"
+            userMap.set(d.userId, name)
+          }
+        })
+        memberCount = userMap.size
+        members = [...userMap.values()]
+      } catch {
+        memberCount = 0
+      }
+
       return {
         ...data,
         messageCount,
+        memberCount,
+        members,
       }
     }))
     return Response.json({ rooms })
