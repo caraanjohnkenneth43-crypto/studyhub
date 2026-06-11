@@ -3,12 +3,13 @@
 Use this file to coordinate between multiple opencode sessions.
 
 ## Active Sessions
-- **Overnight sprint (cron)**: Job `b1372c111cc6`, fires every 4h. State at `~/.hermes/scripts/studyhub-sprint.state`. Gateway running via systemd user service.
+- **Tweaks prompt ready**: `AI/hermes-tweaks-prompt.md` — paste into Hermes to run. Covers 9 fixes: rooms API, notes/graph, remove calculator, chat send bug, images+emojis, room members panel, room-aware navbar, reorganize settings, enterprise UI polish.
 
 ## Decisions Log
 | Date | Agent | Decision |
 |------|-------|----------|
 | 2026-06-09 | OpenCode | Cron chain for overnight sprint: 7 milestones, auto-skip manual tasks, retry 3x, build+commit each |
+| 2026-06-10 | OpenCode | Generated hermes-tweaks-prompt.md with 9 prioritized fixes for Hermes to execute |
 
 ## Blockers
 - (none)
@@ -16,11 +17,8 @@ Use this file to coordinate between multiple opencode sessions.
 ## Handoff Queue
 - (none)
 
-## Cron Chain Setup
-- **Gateway**: `systemctl --user status hermes-gateway` — active, linger enabled
-- **Cron job**: `hermes cron list` — `studyhub-sprint` every 4h
-- **Script**: `~/.hermes/scripts/studyhub-sprint.sh` — runs each milestone via hermes -z
-- **State**: `~/.hermes/scripts/studyhub-sprint.state` — progress tracker (0-7)
-- **Sprint plan**: `AI/overnight-autonomous-sprint.md` (in repo)
-- **Milestones**: M1=DMs, M2=UI redesign, M3=classroom persistence, M4=user profiles, M5=custom quizzes, M6=personal notes, M7=graph-view notes
-- **Review**: Enterprise code loop — Hermes reviews all OpenCode output before commit
+## Tweaks to Run (via Hermes)
+- **Prompt file**: `AI/hermes-tweaks-prompt.md`
+- **Command**: `hermes -s studyhub-enterprise-loop,opencode -q "$(cat AI/hermes-tweaks-prompt.md)"`
+- **Order**: Fix rooms API → Fix notes/graph → Remove calculator → Fix chat send bug → Images+emojis → Room members → Room-aware navbar → Reorganize settings → Enterprise UI polish (last, most delicate)
+- **Build & commit after each milestone**
