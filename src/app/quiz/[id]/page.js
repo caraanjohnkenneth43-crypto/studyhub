@@ -36,16 +36,28 @@ export default function QuizPage() {
   }, [finished])
 
   useEffect(() => {
-    fetch("/api/data")
-      .then((r) => r.json())
-      .then((d) => {
-        for (const s of d.subjects) {
-          const q = s.quizzes.find((qz) => qz.id === params.id)
-          if (q) { setQuiz(q); break }
-        }
-        setLoading(false)
-      })
-      .catch(() => setLoading(false))
+    const isCustom = new URLSearchParams(window.location.search).get("custom") === "true"
+    if (isCustom) {
+      fetch(`/api/quizzes`)
+        .then(r => r.json())
+        .then(d => {
+          const q = (d.quizzes || []).find(qz => qz.id === params.id)
+          if (q) setQuiz({ title: q.title, questions: q.questions })
+          setLoading(false)
+        })
+        .catch(() => setLoading(false))
+    } else {
+      fetch("/api/data")
+        .then((r) => r.json())
+        .then((d) => {
+          for (const s of d.subjects) {
+            const q = s.quizzes.find((qz) => qz.id === params.id)
+            if (q) { setQuiz(q); break }
+          }
+          setLoading(false)
+        })
+        .catch(() => setLoading(false))
+    }
   }, [params.id])
 
   if (loading) {

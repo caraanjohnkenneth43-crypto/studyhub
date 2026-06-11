@@ -110,6 +110,14 @@ service cloud.firestore {
       }
     }
 
+    // ─── User-Created Quizzes ──────────────────────────
+    match /userQuizzes/{document} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth.uid == resource.data.createdBy;
+      allow delete: if request.auth.uid == resource.data.createdBy;
+    }
+
     // ─── Classrooms ─────────────────────────────────────
     match /classrooms/{document} {
       allow read: if request.auth != null;

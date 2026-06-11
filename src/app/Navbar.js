@@ -32,6 +32,9 @@ export default function Navbar() {
         <Link href="/calculator" className="text-xs" style={{ color: pathname === "/calculator" ? "var(--c-accent)" : "var(--c-subtle)" }}>
           Calculator
         </Link>
+        <Link href="/browse-quizzes" className="text-xs" style={{ color: pathname === "/browse-quizzes" || pathname === "/create-quiz" ? "var(--c-accent)" : "var(--c-subtle)" }}>
+          Quiz Sets
+        </Link>
       </div>
       <div className="flex items-center gap-2">
         {(isAdmin || isContributor) && (
