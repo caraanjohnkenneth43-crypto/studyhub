@@ -1,6 +1,7 @@
 import "./globals.css";
 import { AuthProvider } from "./AuthProvider"
 import { ChatNotificationProvider } from "./ChatNotificationProvider"
+import Navbar from "./Navbar"
 
 export const metadata = {
   title: "StudyHub",
@@ -36,6 +37,7 @@ export default function RootLayout({ children }) {
       <body className="min-h-full flex flex-col">
         <AuthProvider>
           <ChatNotificationProvider>
+            <Navbar />
             {children}
           </ChatNotificationProvider>
         </AuthProvider>
