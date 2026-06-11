@@ -16,6 +16,7 @@ export function useAuth() {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [role, setRole] = useState(null)
   const registeredRef = useRef(false)
 
   useEffect(() => {
@@ -42,6 +43,11 @@ export function AuthProvider({ children }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ uid: user.uid, email: user.email, displayName: user.displayName || user.email.split("@")[0] }),
     }).catch(() => {})
+    fetch("/api/auth/role", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: user.email }),
+    }).then(r => r.json()).then(d => setRole(d.role)).catch(() => setRole("student"))
   }, [user])
 
   const signUp = (email, password) => createUserWithEmailAndPassword(auth, email, password)
@@ -50,9 +56,10 @@ export function AuthProvider({ children }) {
   const logOut = () => signOut(auth)
 
   const isAdmin = user && allowedAdmins.includes(user.email)
+  const isContributor = role === "contributor" || role === "admin"
 
   return (
-    <AuthContext.Provider value={{ user, loading, signUp, logIn, logOut, isAdmin }}>
+    <AuthContext.Provider value={{ user, loading, signUp, logIn, logOut, isAdmin, isContributor, role }}>
       {children}
     </AuthContext.Provider>
   )

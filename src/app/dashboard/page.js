@@ -9,7 +9,7 @@ import ReactMarkdown from "react-markdown"
 import rehypeRaw from "rehype-raw"
 
 export default function DashboardHome() {
-  const { user, loading, logOut, isAdmin } = useAuth()
+  const { user, loading, logOut, isAdmin, isContributor } = useAuth()
   const router = useRouter()
   const [data, setData] = useState(null)
   const [showSettings, setShowSettings] = useState(false)
@@ -55,7 +55,7 @@ export default function DashboardHome() {
             <div className="flex-1 flex flex-col gap-3 min-h-0 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               <SettingsContent settings={settings} onUpdate={updateSetting} user={user} />
               <hr className="border-t" style={{ borderColor: "var(--c-border)" }} />
-              {isAdmin && <Link href="/admin/dashboard" className="block w-full text-sm px-3 py-2 rounded-lg transition-colors hover:bg-black/5" style={{ color: "var(--c-subtle)" }}>Admin</Link>}
+              {(isAdmin || isContributor) && <Link href="/admin/dashboard" className="block w-full text-sm px-3 py-2 rounded-lg transition-colors hover:bg-black/5" style={{ color: "var(--c-subtle)" }}>Admin</Link>}
               <button onClick={logOut} className="w-full text-left text-sm px-3 py-2 rounded-lg transition-colors hover:bg-black/5" style={{ color: "var(--c-subtle)" }}>Log out</button>
             </div>
           ) : (

@@ -19,6 +19,8 @@ const TABS = [
 export default function AdminDashboard() {
   const { user, loading, logOut, isAdmin } = useAuth()
   const router = useRouter()
+  const [role, setRole] = useState(null)
+  const [roleChecked, setRoleChecked] = useState(false)
   const [data, setData] = useState(null)
   const [activeSubject, setActiveSubject] = useState(null)
   const [saving, setSaving] = useState(false)
@@ -39,7 +41,25 @@ export default function AdminDashboard() {
     if (!loading && !user) router.push("/login")
   }, [user, loading, router])
 
-  if (loading || !user) {
+  useEffect(() => {
+    if (!loading && user) {
+      fetch("/api/auth/role", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: user.email }),
+      }).then(r => r.json()).then(d => {
+        setRole(d.role)
+        setRoleChecked(true)
+        if (d.role === "student") router.push("/dashboard")
+      }).catch(() => {
+        setRole("student")
+        setRoleChecked(true)
+        router.push("/dashboard")
+      })
+    }
+  }, [user, loading, router])
+
+  if (loading || !user || !roleChecked) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--c-bg)", color: "var(--c-subtle)" }}>
         Loading...
@@ -47,14 +67,9 @@ export default function AdminDashboard() {
     )
   }
 
-  useEffect(() => {
-    if (!loading && user && data) {
-      const contributorEmails = data.contributors || []
-      if (!isAdmin && !contributorEmails.includes(user.email)) {
-        router.push("/dashboard")
-      }
-    }
-  }, [user, loading, router, isAdmin, data])
+  if (role === "student") {
+    return null
+  }
 
   const defaultSubject = { id: "", name: "", icon: "📘", description: "", color: "#3b82f6", classroom: "2029", quizzes: [], links: [] }
   const defaultQuiz = { id: "", title: "", questions: [{ question: "", options: ["", "", "", ""], answer: "" }] }
@@ -230,6 +245,7 @@ export default function AdminDashboard() {
             </button>
             <span className="text-sm hidden sm:inline" style={{ color: "var(--c-subtle)" }}>{user.email}</span>
             <SettingsPanel />
+            {isAdmin && <button onClick={() => router.push("/admin/console")} className="text-xs px-2 py-1 rounded" style={{ background: "#1a1a1a", color: "#00ff00", fontFamily: "monospace" }}>&gt;_ Console</button>}
             <button onClick={logOut} className="text-sm px-2 py-1 rounded" style={{ color: "var(--c-subtle)" }}>Log out</button>
             <button onClick={() => router.back()} className="text-sm" style={{ color: "var(--c-subtle)" }}>&larr; Back</button>
           </div>

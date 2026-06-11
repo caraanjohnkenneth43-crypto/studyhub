@@ -57,7 +57,7 @@ function useActiveCount(user) {
 }
 
 export default function ClassroomView() {
-  const { user, loading, logOut, isAdmin } = useAuth()
+  const { user, loading, logOut, isAdmin, isContributor } = useAuth()
   const router = useRouter()
   const [data, setData] = useState(null)
   const [activeSubjectId, setActiveSubjectId] = useState(null)
@@ -224,7 +224,7 @@ export default function ClassroomView() {
               <div className="space-y-3">
                 <SettingsContent settings={settings} onUpdate={updateSetting} user={user} />
                 <hr className="border-t" style={{ borderColor: "var(--c-border)" }} />
-                {isAdmin && <Link href="/admin/dashboard" className="block w-full text-sm px-3 py-2 rounded-lg transition-colors hover:bg-black/5" style={{ color: "var(--c-subtle)" }} onClick={() => setSidebarView("subjects")}>Admin</Link>}
+                {(isAdmin || isContributor) && <Link href="/admin/dashboard" className="block w-full text-sm px-3 py-2 rounded-lg transition-colors hover:bg-black/5" style={{ color: "var(--c-subtle)" }} onClick={() => setSidebarView("subjects")}>Admin</Link>}
                 <button onClick={() => { logOut(); setSidebarView("subjects") }} className="w-full text-left text-sm px-3 py-2 rounded-lg transition-colors hover:bg-black/5" style={{ color: "var(--c-subtle)" }}>Log out</button>
               </div>
             )}

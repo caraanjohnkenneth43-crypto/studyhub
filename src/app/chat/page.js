@@ -9,7 +9,7 @@ import { db } from "@/lib/firebase"
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, getDocs, limit, doc, setDoc } from "firebase/firestore"
 
 export default function ChatPage() {
-  const { user, loading, logOut, isAdmin } = useAuth()
+  const { user, loading, logOut, isAdmin, isContributor } = useAuth()
   const router = useRouter()
   const [rooms, setRooms] = useState([])
   const [showCreate, setShowCreate] = useState(false)
@@ -75,7 +75,7 @@ export default function ChatPage() {
             <button onClick={() => router.back()} className="text-sm px-2 py-1 rounded transition-colors hover:bg-black/5" style={{ color: "var(--c-muted)" }}>&larr;</button>
             <span className="text-lg font-bold" style={{ color: "var(--c-fg)" }}>Chat</span>
             <Link href="/dashboard" className="text-xs px-2 py-0.5 rounded" style={{ color: "var(--c-subtle)" }}>Dashboard</Link>
-            {isAdmin && <Link href="/admin/dashboard" className="text-xs px-2 py-0.5 rounded" style={{ color: "var(--c-subtle)" }}>Admin</Link>}
+            {(isAdmin || isContributor) && <Link href="/admin/dashboard" className="text-xs px-2 py-0.5 rounded" style={{ color: "var(--c-subtle)" }}>Admin</Link>}
           </div>
           <div className="flex items-center gap-3">
             <span className="text-xs hidden sm:inline" style={{ color: "var(--c-subtle)" }}>{user.email}</span>
