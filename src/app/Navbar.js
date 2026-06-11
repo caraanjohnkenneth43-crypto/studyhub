@@ -35,8 +35,11 @@ export default function Navbar() {
         <Link href="/browse-quizzes" className="text-xs" style={{ color: pathname === "/browse-quizzes" || pathname === "/create-quiz" ? "var(--c-accent)" : "var(--c-subtle)" }}>
           Quiz Sets
         </Link>
-        <Link href="/notes" className="text-xs" style={{ color: pathname.startsWith("/notes") ? "var(--c-accent)" : "var(--c-subtle)" }}>
+        <Link href="/notes" className="text-xs" style={{ color: pathname.startsWith("/notes") && !pathname.includes("/graph") ? "var(--c-accent)" : "var(--c-subtle)" }}>
           Notes
+        </Link>
+        <Link href="/notes/graph" className="text-xs" style={{ color: pathname.includes("/graph") ? "var(--c-accent)" : "var(--c-subtle)" }}>
+          Graph
         </Link>
       </div>
       <div className="flex items-center gap-2">
