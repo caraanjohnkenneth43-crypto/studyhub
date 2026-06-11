@@ -28,7 +28,7 @@ export default function ChatRoom() {
   const { setActiveRoom } = useActiveRoom()
 
   const { room, setRoom, verified, setVerified, roomLoaded } = useRoom(id)
-  const messages = useMessages(id, verified)
+  const { messages, error: messagesError } = useMessages(id, verified)
   const { contributors, uidToEmail } = useUserMap()
   useAutoScroll(messages, bottomRef)
   const showScrollBtn = useScrollDetection(messagesRef)
@@ -120,6 +120,11 @@ export default function ChatRoom() {
             <button onClick={() => router.back()} className="text-sm px-2 py-1 rounded transition-colors hover:bg-black/5" style={{ color: "var(--c-muted)" }}>&larr;</button>
             <span className="text-lg font-bold" style={{ color: "var(--c-fg)" }}># {room?.name || "..."}</span>
             <Link href="/dashboard" className="text-xs px-2 py-0.5 rounded" style={{ color: "var(--c-subtle)" }}>Dashboard</Link>
+            {messagesError && (
+              <span className="text-xs px-2 py-0.5 rounded" style={{ background: "#ef4444", color: "white" }}>
+                Sync error: {messagesError}
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-3">
             <span className="text-xs hidden sm:inline" style={{ color: "var(--c-subtle)" }}>{user.email}</span>

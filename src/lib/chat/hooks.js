@@ -43,17 +43,25 @@ export function useRoom(id) {
  */
 export function useMessages(id, verified) {
   const [messages, setMessages] = useState([])
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     if (!verified) return
     const q = query(collection(db, "chatRooms", id, "messages"), orderBy("timestamp", "asc"), limit(200))
-    const unsub = onSnapshot(q, snap => {
-      setMessages(snap.docs.map(d => ({ id: d.id, ...d.data() })))
-    })
+    const unsub = onSnapshot(q, 
+      snap => {
+        setMessages(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+        setError(null)
+      },
+      err => {
+        console.error("Messages listener error:", err)
+        setError(err.message)
+      }
+    )
     return unsub
   }, [id, verified])
 
-  return messages
+  return { messages, error }
 }
 
 /**
@@ -124,14 +132,19 @@ export function useSendMessage(id, user, text, setText) {
     e.preventDefault()
     if (!text.trim()) return
     const displayName = user.displayName || user.email.split("@")[0]
-    await addDoc(collection(db, "chatRooms", id, "messages"), {
-      userId: user.uid,
-      userName: displayName,
-      userEmail: user.email,
-      text: text.trim(),
-      timestamp: serverTimestamp(),
-    })
-    setText("")
+    try {
+      await addDoc(collection(db, "chatRooms", id, "messages"), {
+        userId: user.uid,
+        userName: displayName,
+        userEmail: user.email,
+        text: text.trim(),
+        timestamp: serverTimestamp(),
+      })
+      setText("")
+    } catch (err) {
+      console.error("Failed to send message:", err)
+      alert("Failed to send message: " + err.message)
+    }
   }, [id, user, text, setText])
 }
 
