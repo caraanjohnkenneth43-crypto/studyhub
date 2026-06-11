@@ -357,7 +357,7 @@ export function useRoomMembers(roomId, room, verified, uidToEmail = {}) {
         }
         
         const email = msgData?.email || presData?.email || ""
-        const displayName = msgData?.displayName || presData?.displayName || email.split("@")[0] || "Unknown"
+        const displayName = msgData?.displayName || presData?.displayName || (email ? email.split("@")[0] : "User")
         const lastMessageTime = msgData?.lastMessageTime || 0
         const presenceTime = presData?.lastSeen || 0
         const lastActive = Math.max(lastMessageTime, presenceTime)

@@ -24,7 +24,7 @@ export default function Navbar({
   // Room-aware mode: show room controls
   if (room) {
     return (
-      <nav className="flex items-center justify-between px-4 py-2 border-b shrink-0" style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }}>
+      <nav className="flex items-center justify-between px-4 py-2 border-b shrink-0 sticky top-0 z-10" style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }}>
         <div className="flex items-center gap-3">
           <button onClick={onBack} className="text-sm px-2 py-1 rounded transition-colors hover:bg-black/5" style={{ color: "var(--c-muted)" }}>
             &larr;
@@ -50,7 +50,7 @@ export default function Navbar({
 
   // Default mode: global navigation
   return (
-    <nav className="flex items-center justify-between px-4 py-2 border-b shrink-0" style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }}>
+    <nav className="flex items-center justify-between px-4 py-2 border-b shrink-0 sticky top-0 z-10" style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }}>
       <div className="flex items-center gap-4">
         <Link href="/dashboard" className="text-sm font-bold" style={{ color: "var(--c-fg)" }}>
           StudyHub

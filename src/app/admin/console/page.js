@@ -159,6 +159,7 @@ export default function DevConsole() {
         <div className="flex items-center gap-4">
           <span className="text-xs" style={{ color: "#555" }}>{user.email}</span>
           <button onClick={() => router.push("/admin/dashboard")} className="text-xs px-3 py-1.5 rounded" style={{ background: "#1a1a1a", color: "#888" }}>Admin Dashboard</button>
+          <button onClick={() => router.back()} className="text-xs px-3 py-1.5 rounded" style={{ background: "#1a1a1a", color: "#888" }}>Back</button>
         </div>
       </header>
 
