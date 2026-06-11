@@ -20,11 +20,18 @@ export default function NotesGraphPage() {
 
   useEffect(() => {
     if (!user) return
-    fetch(`/api/notes?userId=${user.uid}`).then(r => r.json()).then(d => {
-      const allNotes = d.notes || []
-      setNotes(allNotes)
-      buildGraph(allNotes)
-    })
+    fetch(`/api/notes?userId=${user.uid}`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.error) {
+          console.error("Failed to fetch notes for graph:", d.error)
+          return
+        }
+        const allNotes = d.notes || []
+        setNotes(allNotes)
+        buildGraph(allNotes)
+      })
+      .catch(e => console.error("Error fetching notes for graph:", e))
   }, [user])
 
   const parseLinks = (content) => {
@@ -180,14 +187,15 @@ export default function NotesGraphPage() {
         <p className="text-sm" style={{ color: "var(--c-subtle)" }}>Create some notes with [[wikilinks]] to see the graph.</p>
       ) : (
         <div className="rounded-xl border overflow-hidden" style={{ borderColor: "var(--c-border)" }}>
-          <canvas
-            ref={canvasRef}
-            width={800}
-            height={600}
-            onMouseMove={handleMove}
-            className="w-full"
-            style={{ background: "var(--c-card)" }}
-          />
+          <div style={{ position: "relative", width: "100%", maxWidth: 800, margin: "0 auto" }}>
+            <canvas
+              ref={canvasRef}
+              width={800}
+              height={600}
+              onMouseMove={handleMove}
+              style={{ display: "block", width: "100%", height: "auto", background: "var(--c-card)" }}
+            />
+          </div>
         </div>
       )}
     </div>

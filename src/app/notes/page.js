@@ -28,7 +28,16 @@ export default function NotesPage() {
 
   const fetchNotes = () => {
     if (!user) return
-    fetch(`/api/notes?userId=${user.uid}`).then(r => r.json()).then(d => setNotes(d.notes || []))
+    fetch(`/api/notes?userId=${user.uid}`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.error) {
+          console.error("Failed to fetch notes:", d.error)
+          return
+        }
+        setNotes(d.notes || [])
+      })
+      .catch(e => console.error("Error fetching notes:", e))
   }
 
   const selectNote = (note) => {
@@ -48,39 +57,65 @@ export default function NotesPage() {
   const saveNote = async () => {
     if (!user || !editorContent.trim()) return
     setSaving(true)
-    if (activeNote === "new") {
-      const res = await fetch("/api/notes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.uid, subjectId: filterSubject, title: editorTitle, content: editorContent }),
-      })
-      const data = await res.json()
-      if (data.id) {
-        setActiveNote(data.id)
-        fetchNotes()
+    try {
+      if (activeNote === "new") {
+        const res = await fetch("/api/notes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: user.uid, subjectId: filterSubject, title: editorTitle, content: editorContent }),
+        })
+        const data = await res.json()
+        if (data.error) {
+          console.error("Failed to create note:", data.error)
+          alert("Failed to save note: " + data.error)
+        } else if (data.id) {
+          setActiveNote(data.id)
+          fetchNotes()
+        }
+      } else {
+        const res = await fetch("/api/notes", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: activeNote, title: editorTitle, content: editorContent }),
+        })
+        const data = await res.json()
+        if (data.error) {
+          console.error("Failed to update note:", data.error)
+          alert("Failed to save note: " + data.error)
+        } else {
+          fetchNotes()
+        }
       }
-    } else {
-      await fetch("/api/notes", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: activeNote, title: editorTitle, content: editorContent }),
-      })
-      fetchNotes()
+    } catch (e) {
+      console.error("Error saving note:", e)
+      alert("Error saving note: " + e.message)
+    } finally {
+      setSaving(false)
     }
-    setSaving(false)
   }
 
   const deleteNote = async () => {
     if (!activeNote || activeNote === "new") return
-    await fetch("/api/notes", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: activeNote }),
-    })
-    setActiveNote(null)
-    setEditorContent("")
-    setEditorTitle("")
-    fetchNotes()
+    try {
+      const res = await fetch("/api/notes", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: activeNote }),
+      })
+      const data = await res.json()
+      if (data.error) {
+        console.error("Failed to delete note:", data.error)
+        alert("Failed to delete note: " + data.error)
+      } else {
+        setActiveNote(null)
+        setEditorContent("")
+        setEditorTitle("")
+        fetchNotes()
+      }
+    } catch (e) {
+      console.error("Error deleting note:", e)
+      alert("Error deleting note: " + e.message)
+    }
   }
 
   const filtered = filterSubject ? notes.filter(n => n.subjectId === filterSubject) : notes

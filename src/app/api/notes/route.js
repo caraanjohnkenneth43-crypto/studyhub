@@ -8,8 +8,19 @@ export async function GET(request) {
     let ref = adminDB.collection("notes")
     if (userId) ref = ref.where("userId", "==", userId)
     if (subjectId) ref = ref.where("subjectId", "==", subjectId)
-    const snap = await ref.orderBy("updatedAt", "desc").get()
+    
+    // Try with orderBy first (requires composite index)
+    let snap
+    try {
+      snap = await ref.orderBy("updatedAt", "desc").get()
+    } catch (orderError) {
+      // Fallback: fetch without orderBy and sort in memory
+      console.warn("orderBy query failed, falling back to in-memory sort:", orderError.message)
+      snap = await ref.get()
+    }
     const notes = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+    // Sort in memory if we couldn't use orderBy
+    notes.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
     return Response.json({ notes })
   } catch (e) {
     return Response.json({ notes: [], error: e.message }, { status: 500 })
