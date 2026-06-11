@@ -72,20 +72,6 @@ export default function DashboardHome() {
                 <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: "var(--c-muted)" }}>Classroom</p>
                 <p className="text-base font-semibold">Class of 2029 &rarr;</p>
               </button>
-              <Link href="/calculator"
-                className="w-full rounded-xl border-2 card-pad text-left transition-all hover:border-blue-400 flex items-center gap-2"
-                style={{
-                  background: "var(--c-card)",
-                  borderColor: "var(--c-border)",
-                  color: "var(--c-fg)",
-                }}
-              >
-                <span className="text-lg">🔢</span>
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: "var(--c-muted)" }}>Tools</p>
-                  <p className="text-base font-semibold">Calculator</p>
-                </div>
-              </Link>
             </>
           )}
         </div>

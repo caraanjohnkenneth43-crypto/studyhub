@@ -11,7 +11,6 @@ const NAV_ITEMS = [
   { href: "/dashboard/2029", label: "Classroom", icon: "🏫" },
   { href: "/chat", label: "Chat", icon: "💬" },
   { href: "/dm", label: "Messages", icon: "✉️" },
-  { href: "/calculator", label: "Calculator", icon: "🧮" },
 ]
 
 export default function AppShell({ children }) {
