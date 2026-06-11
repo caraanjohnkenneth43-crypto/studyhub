@@ -10,11 +10,23 @@ import { collection, query, onSnapshot } from "firebase/firestore"
 
 const SETTINGS_KEY = "studyhub-settings"
 
+const CAMEL_CASE_REGEX = /([A-Z])/g
+
 const defaults = {
   dark: false,
   fontSize: 16,
   theme: "blue",
   pfpSize: "medium",
+  // Lobby/text settings
+  messageTextSize: 14,
+  userTagSize: 12,
+  lobbyPfpSize: 32,
+  // Color theme settings
+  colorThemeCategory: "default", // "default", "light", "dark", "gradient"
+  customColors: {
+    light: { primary: "#2563eb", secondary: "#64748b", accent: "#2563eb", background: "#f8fafc", surface: "#ffffff", text: "#0f172a", muted: "#94a3b8" },
+    dark: { primary: "#3b82f6", secondary: "#94a3b8", accent: "#3b82f6", background: "#0f172a", surface: "#1e293b", text: "#e2e8f0", muted: "#64748b" }
+  }
 }
 
 const THEMES = [
@@ -328,6 +340,141 @@ export function SettingsContent({ settings, onUpdate, user }) {
           </div>
         </div>
       </div>
+
+      <hr className="border-t my-4" style={{ borderColor: "var(--c-border)" }} />
+
+        {/* Lobby/Text Customization Section */}
+        <div>
+          <h3 className="text-xs font-semibold uppercase tracking-wider mb-3 flex items-center gap-2" style={{ color: "var(--c-muted)" }}>
+            <span>💬</span> Lobby Customization
+          </h3>
+          <div className="space-y-4">
+            <div>
+              <span className="text-sm block mb-1" style={{ color: "var(--c-fg)" }}>Message Text Size — {settings.messageTextSize}px</span>
+              <input
+                type="range"
+                min="10"
+                max="24"
+                step="1"
+                value={settings.messageTextSize}
+                onChange={e => onUpdate("messageTextSize", Number(e.target.value))}
+                className="w-full"
+              />
+            </div>
+
+            <div>
+              <span className="text-sm block mb-1" style={{ color: "var(--c-fg)" }}>User Tag Size — {settings.userTagSize}px</span>
+              <input
+                type="range"
+                min="10"
+                max="18"
+                step="1"
+                value={settings.userTagSize}
+                onChange={e => onUpdate("userTagSize", Number(e.target.value))}
+                className="w-full"
+              />
+            </div>
+
+            <div>
+              <h4 className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--c-muted)" }}>
+                PFP Size in Lobbies
+              </h4>
+              <div className="flex gap-2">
+                {[32, 40, 48, 56].map(size => (
+                  <button key={size} onClick={() => onUpdate("lobbyPfpSize", size)} 
+                    className={`px-2 py-1 rounded text-xs font-medium transition-colors ${settings.lobbyPfpSize === size ? "" : "opacity-50"}`}
+                    style={{
+                      background: settings.lobbyPfpSize === size ? "var(--c-accent)" : "var(--c-bg)",
+                      color: settings.lobbyPfpSize === size ? "white" : "var(--c-fg)",
+                      borderColor: "var(--c-border)",
+                    }}
+                  >
+                    {size}px
+                  </button>
+                ))}
+              </div>
+            </div>
+            </div>
+        </div>
+
+      <hr className="border-t my-4" style={{ borderColor: "var(--c-border)" }} />
+
+      {/* Color Theme Customization Section */}
+        <div>
+          <h3 className="text-xs font-semibold uppercase tracking-wider mb-3 flex items-center gap-2" style={{ color: "var(--c-muted)" }}>
+            <span>🎨</span> Color Themes
+          </h3>
+          <div className="space-y-4">
+            <div>
+              <span className="text-sm block mb-2" style={{ color: "var(--c-fg)" }}>Theme Category</span>
+              <div className="flex gap-2 flex-wrap">
+                {["default", "light", "dark", "gradient"].map(cat => (
+                  <button key={cat} onClick={() => onUpdate("colorThemeCategory", cat)} 
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${settings.colorThemeCategory === cat ? "" : "opacity-50"}`}
+                    style={{
+                      background: settings.colorThemeCategory === cat ? "var(--c-accent)" : "var(--c-bg)",
+                      color: settings.colorThemeCategory === cat ? "white" : "var(--c-fg)",
+                      borderColor: "var(--c-border)",
+                    }}
+                    title={cat}
+                  >
+                    {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {settings.colorThemeCategory !== "default" && (
+              <div className="space-y-3">
+                <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--c-muted)" }}>
+                  Custom Colors ({settings.colorThemeCategory === "gradient" ? "Gradient" : settings.colorThemeCategory })
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  {Object.entries(settings.customColors[settings.colorThemeCategory === "gradient" ? "light" : settings.colorThemeCategory]).map(([key, value]) => (
+                    <div key={key}>
+                      <label className="flex items-center justify-between text-xs">
+                        <span className="capitalize" style={{ color: "var(--c-fg)" }}>{key.replace(new RegExp(CAMEL_CASE_REGEX.source, CAMEL_CASE_REGEX.flags), " $1").trim()}</span>
+                        <input
+                          type="color"
+                          value={value}
+                          onChange={e => {
+                            const newColors = { ...settings.customColors[settings.colorThemeCategory === "gradient" ? "light" : settings.colorThemeCategory], [key]: e.target.value }
+                            onUpdate("customColors", { ...settings.customColors, [settings.colorThemeCategory === "gradient" ? "light" : settings.colorThemeCategory]: newColors })
+                          }}
+                          className="w-8 h-8 rounded border-2 cursor-pointer"
+                          style={{ borderColor: settings.colorThemeCategory === settings.colorThemeCategory ? "var(--c-fg)" : "transparent" }}
+                        />
+                      </label>
+                    </div>
+                  ))}
+                </div>
+                {settings.colorThemeCategory === "gradient" && (
+                  <div className="space-y-2">
+                    <p className="text-xs" style={{ color: "var(--c-subtle)" }}>Gradient uses light theme colors for start/end points</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      {Object.entries(settings.customColors.dark).map(([key, value]) => (
+                        <div key={key}>
+                          <label className="flex items-center justify-between text-xs">
+                            <span className="capitalize" style={{ color: "var(--c-fg)" }}>{key.replace(new RegExp(CAMEL_CASE_REGEX.source, CAMEL_CASE_REGEX.flags), " $1").trim()} (Dark End)</span>
+                            <input
+                              type="color"
+                              value={value}
+                              onChange={e => {
+                                const newColors = { ...settings.customColors.dark, [key]: e.target.value }
+                                onUpdate("customColors", { ...settings.customColors, dark: newColors })
+                              }}
+                              className="w-8 h-8 rounded border-2 cursor-pointer"
+                            />
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
 
       <hr className="border-t my-4" style={{ borderColor: "var(--c-border)" }} />
 
