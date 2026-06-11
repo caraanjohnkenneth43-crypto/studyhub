@@ -92,6 +92,24 @@ service cloud.firestore {
       allow delete: if request.auth.uid == uid;
     }
 
+    // ─── Conversations (Direct Messages) ────────────────
+    match /conversations/{pairId} {
+      allow read: if request.auth != null
+                   && request.auth.uid in resource.data.participants;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null
+                     && request.auth.uid in resource.data.participants;
+      allow delete: if false;
+
+      match /messages/{messageId} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null
+                       && request.resource.data.senderId == request.auth.uid;
+        allow update: if false;
+        allow delete: if request.auth.uid == resource.data.senderId;
+      }
+    }
+
     // ─── Deny everything else ────────────────────────────
     match /{document=**} {
       allow read, write: if false;
