@@ -269,3 +269,127 @@ export function useStickers(userId) {
 
   return { stickers, addSticker }
 }
+
+/**
+ * Fetch room members with presence status.
+ * For public rooms: all authenticated users who have sent messages or are in presence.
+ * For private rooms: users with password (minus blocked) from messages + presence.
+ */
+export function useRoomMembers(roomId, room, verified) {
+  const [members, setMembers] = useState([])
+
+  useEffect(() => {
+    if (!verified || !room) return
+    
+    // Get users who have sent messages in this room
+    const messagesQuery = query(
+      collection(db, "chatRooms", roomId, "messages"),
+      orderBy("timestamp", "desc"),
+      limit(500)
+    )
+    
+    // Get presence data for all users
+    const presenceQuery = query(collection(db, "presence"))
+    
+    let messagesUnsub = null
+    let presenceUnsub = null
+    let messageUsers = new Map()
+    let presenceData = new Map()
+    
+    // Subscribe to room messages to find participating users
+    messagesUnsub = onSnapshot(messagesQuery, snap => {
+      const users = new Map()
+      snap.docs.forEach(d => {
+        const data = d.data()
+        if (data.userId && data.userEmail) {
+          const existing = users.get(data.userId)
+          // Keep the most recent message timestamp
+          if (!existing || (data.timestamp && data.timestamp.seconds > existing.lastMessageTime)) {
+            users.set(data.userId, {
+              uid: data.userId,
+              email: data.userEmail,
+              displayName: data.userName,
+              lastMessageTime: data.timestamp ? data.timestamp.seconds * 1000 : 0,
+            })
+          }
+        }
+      })
+      messageUsers = users
+      updateMembers()
+    })
+    
+    // Subscribe to presence
+    presenceUnsub = onSnapshot(presenceQuery, snap => {
+      const presence = new Map()
+      snap.docs.forEach(d => {
+        const data = d.data()
+        if (data.uid && data.isActive) {
+          presence.set(data.uid, {
+            isActive: data.isActive,
+            lastSeen: data.lastSeen ? data.lastSeen.toMillis() : Date.now(),
+            displayName: data.displayName,
+            email: data.email,
+          })
+        }
+      })
+      presenceData = presence
+      updateMembers()
+    })
+    
+    const updateMembers = () => {
+      const allUserIds = new Set([...messageUsers.keys(), ...presenceData.keys()])
+      const memberList = []
+      
+      for (const uid of allUserIds) {
+        const msgData = messageUsers.get(uid)
+        const presData = presenceData.get(uid)
+        
+        // Skip if blocked
+        if (room.blocked?.includes(msgData?.email) || room.blocked?.includes(presData?.email)) {
+          continue
+        }
+        
+        const email = msgData?.email || presData?.email
+        const displayName = msgData?.displayName || presData?.displayName || email?.split("@")[0] || "Unknown"
+        const lastMessageTime = msgData?.lastMessageTime || 0
+        const presenceTime = presData?.lastSeen || 0
+        const lastActive = Math.max(lastMessageTime, presenceTime)
+        
+        let status = "offline" // grey
+        if (presData?.isActive && (Date.now() - lastActive) < 5 * 60 * 1000) {
+          status = "active" // green
+        } else if (lastActive > 0 && (Date.now() - lastActive) < 5 * 60 * 1000) {
+          status = "active" // green - recent message
+        } else if (lastActive > 0 && (Date.now() - lastActive) < 30 * 60 * 1000) {
+          status = "idle" // yellow
+        }
+        
+        memberList.push({
+          uid,
+          email,
+          displayName,
+          status,
+          lastActive,
+        })
+      }
+      
+      // Sort: active first, then by last active
+      memberList.sort((a, b) => {
+        const statusOrder = { active: 0, idle: 1, offline: 2 }
+        if (statusOrder[a.status] !== statusOrder[b.status]) {
+          return statusOrder[a.status] - statusOrder[b.status]
+        }
+        return b.lastActive - a.lastActive
+      })
+      
+      setMembers(memberList)
+    }
+    
+    return () => {
+      messagesUnsub?.()
+      presenceUnsub?.()
+    }
+  }, [roomId, room, verified])
+  
+  return members
+}

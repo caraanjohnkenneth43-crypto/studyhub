@@ -7,7 +7,7 @@ import { useAuth, allowedAdmins } from "@/app/AuthProvider"
 import SettingsPanel from "@/app/SettingsPanel"
 import { useActiveRoom } from "@/app/ChatNotificationProvider"
 import { COLORS } from "@/lib/constants"
-import { useRoom, useMessages, useUserMap, useAutoScroll, useScrollDetection, useSendTextMessage, useSendImageMessage, useSendStickerMessage, useStickers, useDeleteRoom, useBlockUser } from "@/lib/chat/hooks"
+import { useRoom, useMessages, useUserMap, useAutoScroll, useScrollDetection, useSendTextMessage, useSendImageMessage, useSendStickerMessage, useStickers, useRoomMembers, useDeleteRoom, useBlockUser } from "@/lib/chat/hooks"
 import { resolveMessageEmail, getMessageNameStyle } from "@/lib/chat/gradients"
 import { UserNameTag } from "@/app/UserTag"
 import { savePassword } from "@/lib/chat/password"
@@ -44,6 +44,26 @@ const EMOJI_CATEGORIES = [
   { name: "Animals", emojis: EMOJIS.slice(110, 120) },
 ]
 
+const AVATAR_COLORS = [
+  "#3b82f6", "#ef4444", "#22c55e", "#f59e0b", "#8b5cf6",
+  "#ec4899", "#06b6d4", "#84cc16", "#f97316", "#6366f1",
+]
+
+function getAvatarColor(email) {
+  if (!email) return AVATAR_COLORS[0]
+  let hash = 0
+  for (let i = 0; i < email.length; i++) hash = email.charCodeAt(i) + ((hash << 5) - hash)
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]
+}
+
+function formatLastActive(ts) {
+  const diff = Date.now() - ts
+  if (diff < 60000) return "Just now"
+  if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`
+  if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`
+  return `${Math.floor(diff / 86400000)}d ago`
+}
+
 export default function ChatRoom() {
   const { id } = useParams()
   const { user, loading, logOut } = useAuth()
@@ -56,6 +76,7 @@ export default function ChatRoom() {
   const [blockEmail, setBlockEmail] = useState("")
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [showStickerPanel, setShowStickerPanel] = useState(false)
+  const [showMembersPanel, setShowMembersPanel] = useState(false)
   const [imagePreview, setImagePreview] = useState(null)
   const [activeEmojiCategory, setActiveEmojiCategory] = useState(0)
   const bottomRef = useRef(null)
@@ -67,6 +88,7 @@ export default function ChatRoom() {
   const { messages, error: messagesError } = useMessages(id, verified)
   const { contributors, uidToEmail } = useUserMap()
   const { stickers, addSticker } = useStickers(user?.uid)
+  const members = useRoomMembers(id, room, verified)
   useAutoScroll(messages, bottomRef)
   const showScrollBtn = useScrollDetection(messagesRef)
   const sendText = useSendTextMessage(id, user, text, setText)
@@ -205,6 +227,11 @@ export default function ChatRoom() {
             {room && room.createdBy === user.uid && (
               <button onClick={() => setShowBlockPanel(!showBlockPanel)} className="text-xs" style={{ color: "var(--c-subtle)" }}>Manage</button>
             )}
+            {room && verified && (
+              <button onClick={() => setShowMembersPanel(!showMembersPanel)} className="text-xs px-2 py-1 rounded hover:bg-black/5 transition-colors" style={{ color: "var(--c-fg)" }}>
+                👥 {members.length}
+              </button>
+            )}
             <SettingsPanel />
             <button onClick={logOut} className="text-xs" style={{ color: "var(--c-subtle)" }}>Log out</button>
           </div>
@@ -237,6 +264,51 @@ export default function ChatRoom() {
               />
               <button onClick={() => { blockUser(blockEmail); setBlockEmail("") }} disabled={!blockEmail.trim()} className="px-2 py-1 text-white rounded text-xs font-medium disabled:opacity-50" style={{ background: COLORS.RED }}>Block</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showMembersPanel && room && verified && (
+        <div className="relative z-10 max-w-6xl mx-auto w-full px-4">
+          <div className="rounded-xl border shadow-xl p-4 w-full max-w-sm" style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }}>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold" style={{ color: "var(--c-fg)" }}>Room Members ({members.length})</h3>
+              <button onClick={() => setShowMembersPanel(false)} className="text-xs px-2 py-1 rounded hover:bg-black/5" style={{ color: "var(--c-subtle)" }}>Close</button>
+            </div>
+            {members.length === 0 ? (
+              <p className="text-xs text-center py-4" style={{ color: "var(--c-subtle)" }}>No members yet.</p>
+            ) : (
+              <div className="space-y-1.5 max-h-80 overflow-y-auto">
+                {members.map(member => (
+                  <div key={member.uid} className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-black/5 transition-colors">
+                    <div className="relative w-8 h-8 shrink-0">
+                      <div className="w-full h-full rounded-full flex items-center justify-center text-xs font-medium text-white" style={{ background: getAvatarColor(member.email) }}>
+                        {member.displayName.charAt(0).toUpperCase()}
+                      </div>
+                      <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-[var(--c-card)]
+                        ${member.status === "active" ? "bg-green-500" : member.status === "idle" ? "bg-yellow-500" : "bg-gray-500"}`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 truncate">
+                        <span className="text-sm font-medium truncate" style={{ color: "var(--c-fg)" }}>{member.displayName}</span>
+                        {member.uid === user.uid && <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: "var(--c-accent)", color: "white" }}>You</span>}
+                      </div>
+                      <div className="text-[10px] truncate" style={{ color: "var(--c-subtle)" }}>
+                        {member.email}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <span className={`w-2 h-2 rounded-full ${member.status === "active" ? "bg-green-500" : member.status === "idle" ? "bg-yellow-500" : "bg-gray-500"}`} />
+                      </div>
+                      <div className="text-[10px] mt-0.5" style={{ color: "var(--c-subtle)" }}>
+                        {member.lastActive ? formatLastActive(member.lastActive) : "Never"}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
