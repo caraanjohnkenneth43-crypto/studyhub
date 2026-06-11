@@ -40,10 +40,17 @@ export async function GET(request) {
     if (!adminDB) return Response.json({ scores: [], positions: {} }, { status: 200 })
     const url = new URL(request.url)
     const quizId = url.searchParams.get("quizId")
-    let ref = adminDB.collection("scores").orderBy("score", "desc").orderBy("timestamp", "asc")
+    const uid = url.searchParams.get("uid")
+    let ref = adminDB.collection("scores")
+    if (uid) {
+      ref = ref.where("uid", "==", uid)
+    } else {
+      ref = ref.orderBy("score", "desc").orderBy("timestamp", "asc")
+    }
     if (quizId) ref = ref.where("quizId", "==", quizId)
     const snap = await ref.limit(50).get()
     const scores = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+    if (uid) scores.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
 
     const positions = {}
     let prevScore = null, rank = 0

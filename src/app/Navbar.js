@@ -45,7 +45,7 @@ export default function Navbar() {
           </Link>
         )}
         <SettingsPanel />
-        <span className="text-xs hidden sm:inline" style={{ color: "var(--c-subtle)" }}>{user.email}</span>
+        <Link href="/profile" className="text-xs hidden sm:inline" style={{ color: "var(--c-subtle)" }}>{user.email}</Link>
         <button onClick={logOut} className="text-xs px-2 py-1 rounded" style={{ color: "var(--c-subtle)" }}>
           Log out
         </button>
