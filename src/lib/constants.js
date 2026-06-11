@@ -71,6 +71,7 @@ export const FIRESTORE = {
   PRESENCE: "presence",
   SCORES: "scores",
   CONVERSATIONS: "conversations",
+  CLASSROOMS: "classrooms",
 }
 
 // ─── Colors ─────────────────────────────────────────────────
