@@ -9,6 +9,7 @@ import { useActiveRoom } from "@/app/ChatNotificationProvider"
 import { COLORS } from "@/lib/constants"
 import { useRoom, useMessages, useUserMap, useAutoScroll, useScrollDetection, useSendMessage, useDeleteRoom, useBlockUser } from "@/lib/chat/hooks"
 import { resolveMessageEmail, getMessageNameStyle } from "@/lib/chat/gradients"
+import { UserNameTag } from "@/app/UserTag"
 import { savePassword } from "@/lib/chat/password"
 import { isBlocked } from "@/lib/chat/moderation"
 
@@ -182,13 +183,16 @@ export default function ChatRoom() {
             const isOwn = msg.userId === user.uid
             const { className, styleColor } = getMessageNameStyle(email, isOwn, allowedAdmins, contributors)
             return (
-            <div key={msg.id} className="flex gap-2 px-2 min-w-0">
-              <span className={`text-xs font-medium shrink-0 mt-0.5 ${className}`} style={{ color: styleColor }}>
-                {msg.userName || "Anonymous"}:
-              </span>
-              <span className="text-xs break-words" style={{ color: "var(--c-muted)", overflowWrap: "anywhere", wordBreak: "break-word" }}>{msg.text}</span>
+            <div key={msg.id} className="flex items-start gap-2 px-2 min-w-0">
+              <UserNameTag
+                email={email}
+                name={msg.userName}
+                admins={allowedAdmins}
+                contributors={contributors}
+              />
+              <span className="text-xs break-words flex-1" style={{ color: "var(--c-muted)", overflowWrap: "anywhere", wordBreak: "break-word" }}>{msg.text}</span>
               {msg.timestamp && (
-                <span className="text-[10px] shrink-0 ml-auto" style={{ color: "var(--c-subtle)" }}>
+                <span className="text-[10px] shrink-0 mt-1" style={{ color: "var(--c-subtle)" }}>
                   {new Date(msg.timestamp.seconds * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                 </span>
               )}

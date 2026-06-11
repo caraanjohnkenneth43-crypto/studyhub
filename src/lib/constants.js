@@ -13,8 +13,8 @@ export const ADMIN_EMAILS = [
 
 // ─── Gradients (used in chat messages + admin Users tab) ────
 export const GRADIENTS = {
-  admin: "font-bold bg-gradient-to-r from-gray-700 via-gray-300 to-white bg-clip-text text-transparent",
-  contributor: "font-bold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent",
+  admin: "font-bold bg-gradient-to-r from-amber-400 via-orange-500 to-red-500 bg-clip-text text-transparent",
+  contributor: "font-bold bg-gradient-to-r from-violet-400 via-purple-500 to-pink-500 bg-clip-text text-transparent",
 }
 
 /** Resolve gradient class for a user email. Returns one of GRADIENTS or "". */
