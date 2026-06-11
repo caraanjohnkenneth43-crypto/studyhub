@@ -1,17 +1,48 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { useAuth, allowedAdmins } from "@/app/AuthProvider"
 import SettingsPanel from "@/app/SettingsPanel"
 import { useActiveRoom } from "@/app/ChatNotificationProvider"
 import { COLORS } from "@/lib/constants"
-import { useRoom, useMessages, useUserMap, useAutoScroll, useScrollDetection, useSendMessage, useDeleteRoom, useBlockUser } from "@/lib/chat/hooks"
+import { useRoom, useMessages, useUserMap, useAutoScroll, useScrollDetection, useSendTextMessage, useSendImageMessage, useSendStickerMessage, useStickers, useDeleteRoom, useBlockUser } from "@/lib/chat/hooks"
 import { resolveMessageEmail, getMessageNameStyle } from "@/lib/chat/gradients"
 import { UserNameTag } from "@/app/UserTag"
 import { savePassword } from "@/lib/chat/password"
 import { isBlocked } from "@/lib/chat/moderation"
+
+const EMOJIS = [
+  "😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇",
+  "🙂","🙃","😉","😌","😍","🥰","😘","😗","😙","😚",
+  "😋","😛","😜","🤪","😝","🤑","🤗","🤭","🤫","🤔",
+  "🤐","🤨","😐","😑","😶","😏","😒","🙄","😬","🤥",
+  "😌","😔","😪","🤤","😴","😷","🤒","🤕","🤢","🤮",
+  "🤧","😇","🤠","🤡","🤥","🤔","🤭","🤫","🤐","😑",
+  "❤️","🧡","💛","💚","💙","💜","🖤","🤍","🤎","💔",
+  "👍","👎","👌","✌️","🤞","🤟","🤘","🤙","👈","👉",
+  "👆","🖕","👇","☝️","👏","🙌","👐","🤲","🤝","🙏",
+  "🎉","🎊","🎈","🎁","🎂","🎄","🎃","🎅","🎆","🎇",
+  "✨","🌟","⭐","💫","🌈","☀️","⛅","🌤️","🌥️","🌦️",
+  "🌧️","🌨️","❄️","☃️","🌙","🌚","🌝","🌞","🪐","⭐",
+  "🍎","🍌","🍕","🍔","🍦","🍪","☕","🍻","🍹","🥤",
+  "🎮","🎲","🎸","🎺","🎻","🥁","🎤","🎧","🎬","🏀",
+  "⚽","🏈","⚾","🎾","🏐","🏓","🏸","🥅","⛳","🏹",
+  "🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐨","🐯",
+  "🦁","🐮","🐷","🐸","🐵","🐣","🐧","🐦","🐤","🦆"
+]
+
+const EMOJI_CATEGORIES = [
+  { name: "Smileys", emojis: EMOJIS.slice(0, 40) },
+  { name: "Hearts", emojis: EMOJIS.slice(40, 50) },
+  { name: "Gestures", emojis: EMOJIS.slice(50, 60) },
+  { name: "Celebration", emojis: EMOJIS.slice(60, 70) },
+  { name: "Stars/Weather", emojis: EMOJIS.slice(70, 90) },
+  { name: "Food", emojis: EMOJIS.slice(90, 100) },
+  { name: "Activities", emojis: EMOJIS.slice(100, 110) },
+  { name: "Animals", emojis: EMOJIS.slice(110, 120) },
+]
 
 export default function ChatRoom() {
   const { id } = useParams()
@@ -23,16 +54,24 @@ export default function ChatRoom() {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [showBlockPanel, setShowBlockPanel] = useState(false)
   const [blockEmail, setBlockEmail] = useState("")
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
+  const [showStickerPanel, setShowStickerPanel] = useState(false)
+  const [imagePreview, setImagePreview] = useState(null)
+  const [activeEmojiCategory, setActiveEmojiCategory] = useState(0)
   const bottomRef = useRef(null)
   const messagesRef = useRef(null)
+  const emojiPickerRef = useRef(null)
   const { setActiveRoom } = useActiveRoom()
 
   const { room, setRoom, verified, setVerified, roomLoaded } = useRoom(id)
   const { messages, error: messagesError } = useMessages(id, verified)
   const { contributors, uidToEmail } = useUserMap()
+  const { stickers, addSticker } = useStickers(user?.uid)
   useAutoScroll(messages, bottomRef)
   const showScrollBtn = useScrollDetection(messagesRef)
-  const send = useSendMessage(id, user, text, setText)
+  const sendText = useSendTextMessage(id, user, text, setText)
+  const sendImage = useSendImageMessage(id, user)
+  const sendSticker = useSendStickerMessage(id, user)
   const deleteRoom = useDeleteRoom(id, router)
   const { blockUser, unblockUser } = useBlockUser(room, setRoom)
 
@@ -55,9 +94,35 @@ export default function ChatRoom() {
     }
   }
 
+  const handleImageUpload = async (file) => {
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const base64 = e.target.result
+      setImagePreview(base64)
+      sendImage(base64, "")
+      addSticker(base64)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleEmojiClick = (emoji) => {
+    setText(prev => prev + emoji)
+    setShowEmojiPicker(false)
+  }
+
+  const handleStickerClick = (sticker) => {
+    sendSticker(sticker.imageUrl, sticker.id, "")
+    setShowStickerPanel(false)
+  }
+
+  const removeImagePreview = () => {
+    setImagePreview(null)
+  }
+
   if (loading || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--c-bg)", color: "var(--c-subtle)" }}>
+      <div className="min-h-screen flex flex-col items-center justify-center" style={{ background: "var(--c-bg)", color: "var(--c-subtle)" }}>
         Loading...
       </div>
     )
@@ -74,7 +139,7 @@ export default function ChatRoom() {
 
   if (isBlocked(room, user.email)) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--c-bg)" }}>
+      <div className="min-h-screen flex flex-col items-center justify-center" style={{ background: "var(--c-bg)", color: "var(--c-subtle)" }}>
         <div className="rounded-xl border shadow-xl p-6 w-full max-w-sm mx-4 text-center" style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }}>
           <h2 className="text-lg font-semibold mb-2" style={{ color: "var(--c-fg)" }}>🔒 Access Revoked</h2>
           <p className="text-sm mb-4" style={{ color: "var(--c-muted)" }}>You&apos;ve been removed from this room by the owner.</p>
@@ -86,7 +151,7 @@ export default function ChatRoom() {
 
   if (room && room.type === "private" && !verified) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--c-bg)" }}>
+      <div className="min-h-screen flex flex-col items-center justify-center" style={{ background: "var(--c-bg)", color: "var(--c-subtle)" }}>
         <div className="rounded-xl border shadow-xl p-6 w-full max-w-sm mx-4" style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }}>
           <div className="flex items-center justify-between mb-1">
             <h2 className="text-lg font-semibold" style={{ color: "var(--c-fg)" }}>🔒 Private Room</h2>
@@ -186,7 +251,6 @@ export default function ChatRoom() {
           {messages.map(msg => {
             const email = resolveMessageEmail(msg, uidToEmail)
             const isOwn = msg.userId === user.uid
-            const { className, styleColor } = getMessageNameStyle(email, isOwn, allowedAdmins, contributors)
             return (
             <div key={msg.id} className="flex items-start gap-2 px-2 min-w-0">
               <UserNameTag
@@ -195,7 +259,17 @@ export default function ChatRoom() {
                 admins={allowedAdmins}
                 contributors={contributors}
               />
-              <span className="text-xs break-words flex-1" style={{ color: "var(--c-muted)", overflowWrap: "anywhere", wordBreak: "break-word" }}>{msg.text}</span>
+              {(msg.type === "image" || msg.type === "sticker") && msg.imageUrl && (
+                <img
+                  src={msg.imageUrl}
+                  alt={msg.type === "sticker" ? "sticker" : "image"}
+                  className="max-w-xs rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                  style={{ maxHeight: "300px", objectFit: "contain" }}
+                />
+              )}
+              {msg.text && (
+                <span className="text-xs break-words flex-1" style={{ color: "var(--c-muted)", overflowWrap: "anywhere", wordBreak: "break-word" }}>{msg.text}</span>
+              )}
               {msg.timestamp && (
                 <span className="text-[10px] shrink-0 mt-1" style={{ color: "var(--c-subtle)" }}>
                   {new Date(msg.timestamp.seconds * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
@@ -210,15 +284,126 @@ export default function ChatRoom() {
         {showScrollBtn && (
           <button
             onClick={() => messagesRef.current?.scrollTo({ top: messagesRef.current.scrollHeight, behavior: "smooth" })}
-            className="absolute bottom-20 right-6 w-10 h-10 rounded-full shadow-lg flex items-center justify-center text-white text-lg"
+            className="absolute bottom-28 right-6 w-10 h-10 rounded-full shadow-lg flex items-center justify-center text-white text-lg"
             style={{ background: "var(--c-accent)" }}
           >
             ↓
           </button>
         )}
 
-        <form onSubmit={send} className="pb-4 pt-2">
+        {/* Panels overlay */}
+        <div className="absolute bottom-16 left-2 right-2 sm:right-4 max-w-4xl mx-auto flex justify-between items-end gap-2">
+          {/* Emoji Picker */}
+          {showEmojiPicker && (
+            <div
+              ref={emojiPickerRef}
+              className="absolute bottom-12 left-0 w-64 sm:w-80 max-h-64 overflow-y-auto rounded-xl border shadow-xl p-3"
+              style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }}
+            >
+              <div className="flex items-center gap-1 mb-2 border-b pb-2" style={{ borderColor: "var(--c-border)" }}>
+                {EMOJI_CATEGORIES.map((cat, i) => (
+                  <button
+                    key={cat.name}
+                    onClick={() => setActiveEmojiCategory(i)}
+                    className={`text-xs px-2 py-1 rounded transition-colors ${i === activeEmojiCategory ? "font-semibold" : ""}`}
+                    style={{
+                      background: i === activeEmojiCategory ? "var(--c-accent)" : "transparent",
+                      color: i === activeEmojiCategory ? "white" : "var(--c-fg)",
+                      borderColor: "var(--c-border)",
+                    }}
+                  >
+                    {cat.name}
+                  </button>
+                ))}
+              </div>
+              <div className="grid grid-cols-8 gap-1">
+                {EMOJI_CATEGORIES[activeEmojiCategory].emojis.map(emoji => (
+                  <button
+                    key={emoji}
+                    onClick={() => handleEmojiClick(emoji)}
+                    className="text-xl py-1 hover:scale-125 transition-transform"
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Sticker Panel */}
+          {showStickerPanel && (
+            <div className="absolute bottom-12 right-0 w-64 max-h-64 overflow-y-auto rounded-xl border shadow-xl p-3" style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }}>
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-xs font-semibold" style={{ color: "var(--c-fg)" }}>Stickers</h4>
+              </div>
+              {stickers.length === 0 ? (
+                <p className="text-xs text-center py-4" style={{ color: "var(--c-subtle)" }}>No stickers yet. Send an image to save it!</p>
+              ) : (
+                <div className="grid grid-cols-4 gap-2">
+                  {stickers.map(sticker => (
+                    <button
+                      key={sticker.id}
+                      onClick={() => handleStickerClick(sticker)}
+                      className="aspect-square rounded-lg overflow-hidden hover:scale-105 transition-transform border"
+                      style={{ borderColor: "var(--c-border)" }}
+                    >
+                      <img src={sticker.imageUrl} alt="sticker" className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Image Preview */}
+          {imagePreview && (
+            <div className="absolute bottom-12 left-0 right-0 sm:left-0 sm:right-4 sm:w-auto max-w-4xl mx-auto flex justify-center">
+              <div className="relative rounded-xl overflow-hidden border shadow-xl" style={{ borderColor: "var(--c-border)" }}>
+                <img src={imagePreview} alt="preview" className="max-w-xs max-h-64 rounded-lg" />
+                <button
+                  onClick={removeImagePreview}
+                  className="absolute top-1 right-1 w-6 h-6 rounded-full flex items-center justify-center text-white text-sm"
+                  style={{ background: "rgba(0,0,0,0.7)" }}
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <form onSubmit={sendText} className="pb-4 pt-2 relative">
           <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+              className="px-3 py-2 rounded-lg text-lg hover:bg-black/5 transition-colors shrink-0"
+              style={{ color: "var(--c-fg)" }}
+            >
+              😀
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowStickerPanel(!showStickerPanel)}
+              className="px-3 py-2 rounded-lg text-lg hover:bg-black/5 transition-colors shrink-0"
+              style={{ color: "var(--c-fg)" }}
+            >
+              🎨
+            </button>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={e => e.target.files[0] && handleImageUpload(e.target.files[0])}
+              className="hidden"
+              id="image-upload"
+            />
+            <label
+              htmlFor="image-upload"
+              className="px-3 py-2 rounded-lg text-lg hover:bg-black/5 transition-colors shrink-0 cursor-pointer"
+              style={{ color: "var(--c-fg)" }}
+            >
+              📷
+            </label>
             <input
               value={text}
               onChange={e => setText(e.target.value)}
@@ -229,7 +414,7 @@ export default function ChatRoom() {
             <button
               type="submit"
               disabled={!text.trim()}
-              className="px-4 py-2 text-white rounded-lg text-sm font-medium disabled:opacity-50"
+              className="px-4 py-2 text-white rounded-lg text-sm font-medium disabled:opacity-50 shrink-0"
               style={{ background: "var(--c-accent)" }}
             >
               Send

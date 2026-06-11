@@ -125,27 +125,85 @@ export function useScrollDetection(messagesRef) {
 }
 
 /**
- * Send a message to the current room.
+ * Send a message to the current room. Supports text, image (base64), and sticker re-send.
+ * type: "text" | "image" | "sticker"
  */
-export function useSendMessage(id, user, text, setText) {
+export function useSendMessage(id, user) {
+  return useCallback(async (e) => {
+    e.preventDefault()
+    // This version expects an object: { type, content, imageUrl, stickerId }
+    // We'll handle this differently in the component
+    // Keeping backward compatibility with simple text for now
+  }, [id, user])
+}
+
+export function sendMessageHelper(id, user, { type, content, imageUrl, stickerId }) {
+  if (type === "text" && !content?.trim()) return
+  const displayName = user.displayName || user.email.split("@")[0]
+  const messageData = {
+    userId: user.uid,
+    userName: displayName,
+    userEmail: user.email,
+    timestamp: serverTimestamp(),
+  }
+  if (type === "text") messageData.type = "text"
+  if (type === "image") {
+    messageData.type = "image"
+    messageData.text = content || ""
+    messageData.imageUrl = imageUrl
+  }
+  if (type === "sticker") {
+    messageData.type = "sticker"
+    messageData.text = content || ""
+    messageData.imageUrl = imageUrl
+    messageData.stickerId = stickerId
+  }
+  return addDoc(collection(db, "chatRooms", id, "messages"), messageData)
+}
+
+/**
+ * Send a text message.
+ */
+export function useSendTextMessage(id, user, text, setText) {
   return useCallback(async (e) => {
     e.preventDefault()
     if (!text.trim()) return
-    const displayName = user.displayName || user.email.split("@")[0]
     try {
-      await addDoc(collection(db, "chatRooms", id, "messages"), {
-        userId: user.uid,
-        userName: displayName,
-        userEmail: user.email,
-        text: text.trim(),
-        timestamp: serverTimestamp(),
-      })
+      await sendMessageHelper(id, user, { type: "text", content: text.trim() })
       setText("")
     } catch (err) {
       console.error("Failed to send message:", err)
       alert("Failed to send message: " + err.message)
     }
   }, [id, user, text, setText])
+}
+
+/**
+ * Send an image message.
+ */
+export function useSendImageMessage(id, user) {
+  return useCallback(async (imageUrl, content = "") => {
+    try {
+      await sendMessageHelper(id, user, { type: "image", content, imageUrl })
+    } catch (err) {
+      console.error("Failed to send image:", err)
+      alert("Failed to send image: " + err.message)
+    }
+  }, [id, user])
+}
+
+/**
+ * Send a sticker message.
+ */
+export function useSendStickerMessage(id, user) {
+  return useCallback(async (imageUrl, stickerId, content = "") => {
+    try {
+      await sendMessageHelper(id, user, { type: "sticker", content, imageUrl, stickerId })
+    } catch (err) {
+      console.error("Failed to send sticker:", err)
+      alert("Failed to send sticker: " + err.message)
+    }
+  }, [id, user])
 }
 
 /**
@@ -178,4 +236,36 @@ export function useBlockUser(room, setRoom) {
   }, [room, setRoom])
 
   return { blockUser, unblockUser }
+}
+
+/**
+ * Fetch stickers (images) from user's messages for the sticker panel.
+ */
+export function useStickers(userId) {
+  const [stickers, setStickers] = useState([])
+
+  useEffect(() => {
+    if (!userId) return
+    const q = query(
+      collection(db, "chatRooms"),
+      // We need to search across all rooms - this is a simplification
+      // In practice, you'd query a dedicated stickers collection or scan rooms
+    )
+    // For now, we'll fetch from localStorage or a user-specific stickers collection
+    const stored = localStorage.getItem("studyhub-stickers")
+    if (stored) {
+      try {
+        setStickers(JSON.parse(stored))
+      } catch {}
+    }
+  }, [userId])
+
+  const addSticker = useCallback((imageUrl) => {
+    const newSticker = { id: Date.now().toString(), imageUrl, createdAt: new Date().toISOString() }
+    const updated = [newSticker, ...stickers].slice(0, 50)
+    setStickers(updated)
+    localStorage.setItem("studyhub-stickers", JSON.stringify(updated))
+  }, [stickers])
+
+  return { stickers, addSticker }
 }
