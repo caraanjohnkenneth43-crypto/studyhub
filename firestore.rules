@@ -110,6 +110,17 @@ service cloud.firestore {
       }
     }
 
+    // ─── Personal Notes ────────────────────────────────
+    match /notes/{document} {
+      allow read: if request.auth != null
+                   && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null
+                     && request.auth.uid == resource.data.userId;
+      allow delete: if request.auth != null
+                     && request.auth.uid == resource.data.userId;
+    }
+
     // ─── User-Created Quizzes ──────────────────────────
     match /userQuizzes/{document} {
       allow read: if request.auth != null;
