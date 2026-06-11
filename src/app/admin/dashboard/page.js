@@ -17,10 +17,8 @@ const TABS = [
 ]
 
 export default function AdminDashboard() {
-  const { user, loading, logOut, isAdmin } = useAuth()
+  const { user, loading, logOut, isAdmin, role } = useAuth()
   const router = useRouter()
-  const [role, setRole] = useState(null)
-  const [roleChecked, setRoleChecked] = useState(false)
   const [data, setData] = useState(null)
   const [activeSubject, setActiveSubject] = useState(null)
   const [saving, setSaving] = useState(false)
@@ -42,24 +40,10 @@ export default function AdminDashboard() {
   }, [user, loading, router])
 
   useEffect(() => {
-    if (!loading && user) {
-      fetch("/api/auth/role", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: user.email }),
-      }).then(r => r.json()).then(d => {
-        setRole(d.role)
-        setRoleChecked(true)
-        if (d.role === "student") router.push("/dashboard")
-      }).catch(() => {
-        setRole("student")
-        setRoleChecked(true)
-        router.push("/dashboard")
-      })
-    }
-  }, [user, loading, router])
+    if (!loading && user && role !== null && role === "student") router.push("/dashboard")
+  }, [user, loading, role, router])
 
-  if (loading || !user || !roleChecked) {
+  if (loading || !user || role === null) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--c-bg)", color: "var(--c-subtle)" }}>
         Loading...

@@ -22,13 +22,19 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
       setUser(user)
+      setRole(null)
       setLoading(false)
     })
     return unsub
   }, [])
 
   useEffect(() => {
-    if (!user || registeredRef.current) return
+    if (!user) {
+      setRole(null)
+      return
+    }
+    setRole(null)
+    const controller = new AbortController()
     registeredRef.current = true
     const initDisplayName = async () => {
       if (!user.displayName) {
@@ -39,15 +45,18 @@ export function AuthProvider({ children }) {
     }
     initDisplayName()
     fetch("/api/users", {
+      signal: controller.signal,
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ uid: user.uid, email: user.email, displayName: user.displayName || user.email.split("@")[0] }),
     }).catch(() => {})
     fetch("/api/auth/role", {
+      signal: controller.signal,
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${user.accessToken}` },
       body: JSON.stringify({ email: user.email }),
-    }).then(r => r.json()).then(d => setRole(d.role)).catch(() => setRole("student"))
+    }).then(r => r.json()).then(d => setRole(d.role)).catch(() => {})
+    return () => controller.abort()
   }, [user])
 
   const signUp = (email, password) => createUserWithEmailAndPassword(auth, email, password)

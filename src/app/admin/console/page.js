@@ -14,7 +14,7 @@ export default function DevConsole() {
   useEffect(() => {
     if (!loading) {
       if (!user) router.push("/login")
-      else if (role && role !== "admin") router.push("/admin/dashboard")
+      else if (role !== null && role !== "admin") router.push("/admin/dashboard")
     }
   }, [user, loading, router, role])
 
