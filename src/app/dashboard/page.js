@@ -21,6 +21,7 @@ export default function DashboardHome() {
 
   useEffect(() => {
     setSettings(loadSettings())
+    applySettings(loadSettings())
     fetch("/api/data").then(r => r.json()).then(setData).catch(() => setData({ subjects: [], info: [] }))
   }, [])
 

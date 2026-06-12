@@ -59,6 +59,25 @@ function apply(settings) {
   root.classList.toggle("dark", settings.dark)
   root.style.fontSize = settings.fontSize + "px"
   root.setAttribute("data-theme", settings.theme || "blue")
+
+  const cat = settings.colorThemeCategory
+  if (cat && cat !== "default" && settings.customColors) {
+    const mode = cat === "gradient" ? "light" : cat
+    const colors = settings.customColors[mode]
+    if (colors) {
+      if (colors.primary) { root.style.setProperty("--c-accent", colors.primary); root.style.setProperty("--c-link", colors.primary) }
+      if (colors.accent) { root.style.setProperty("--c-accent", colors.accent); root.style.setProperty("--c-link", colors.accent) }
+      if (colors.background) root.style.setProperty("--c-bg", colors.background)
+      if (colors.surface) root.style.setProperty("--c-card", colors.surface)
+      if (colors.text) root.style.setProperty("--c-fg", colors.text)
+      if (colors.muted) root.style.setProperty("--c-subtle", colors.muted)
+      if (colors.secondary) root.style.setProperty("--c-muted", colors.secondary)
+    }
+  } else {
+    const vars = ["--c-accent", "--c-link", "--c-bg", "--c-card", "--c-fg", "--c-subtle", "--c-muted"]
+    vars.forEach(v => root.style.removeProperty(v))
+  }
+
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
 }
 
@@ -558,7 +577,9 @@ export default function SettingsPanel({ children, onOpen, noPopup }) {
   const panelRef = useRef(null)
 
   useEffect(() => {
-    setSettings(load())
+    const loaded = load()
+    setSettings(loaded)
+    apply(loaded)
   }, [])
 
   useEffect(() => {

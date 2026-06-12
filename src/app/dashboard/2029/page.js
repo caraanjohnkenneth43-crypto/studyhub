@@ -79,6 +79,7 @@ export default function ClassroomView() {
 
   useEffect(() => {
     setSettings(loadSettings())
+    applySettings(loadSettings())
   }, [])
 
   const activeCount = useActiveCount(user)

@@ -25,7 +25,11 @@ export default function RootLayout({ children }) {
               try {
                 var s = JSON.parse(localStorage.getItem("studyhub-settings") || "{}");
                 if (s.dark) document.documentElement.classList.add("dark");
-                if (typeof s.fontSize === "number") document.documentElement.style.fontSize = s.fontSize + "px";
+                var fontSize = s.fontSize;
+                if (typeof fontSize === "number") document.documentElement.style.fontSize = fontSize + "px";
+                else if (fontSize === "small") document.documentElement.style.fontSize = "14px";
+                else if (fontSize === "large") document.documentElement.style.fontSize = "18px";
+                if (s.theme) document.documentElement.setAttribute("data-theme", s.theme);
                 if ("serviceWorker" in navigator) {
                   navigator.serviceWorker.register("/sw.js");
                 }
