@@ -68,6 +68,7 @@ function apply(settings) {
   }
 
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
+  try { window.dispatchEvent(new CustomEvent("studyhub-settings-changed", { detail: settings })) } catch {}
 }
 
 export { defaults as settingsDefaults, load as loadSettings, apply as applySettings, SETTINGS_KEY }

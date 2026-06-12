@@ -80,7 +80,10 @@ export default function ChatRoom() {
   const [showMembersPanel, setShowMembersPanel] = useState(false)
   const [imagePreview, setImagePreview] = useState(null)
   const [activeEmojiCategory, setActiveEmojiCategory] = useState(0)
-  const [chatSettings, setChatSettings] = useState({ messageTextSize: 14, userTagSize: 12, lobbyPfpSize: 32 })
+  const [chatSettings, setChatSettings] = useState(() => {
+    const s = typeof window !== "undefined" ? loadSettings() : { messageTextSize: 14, userTagSize: 12, lobbyPfpSize: 32 }
+    return { messageTextSize: s.messageTextSize, userTagSize: s.userTagSize, lobbyPfpSize: s.lobbyPfpSize }
+  })
   const bottomRef = useRef(null)
   const messagesRef = useRef(null)
   const emojiPickerRef = useRef(null)
@@ -111,6 +114,13 @@ export default function ChatRoom() {
   useEffect(() => {
     const s = loadSettings()
     setChatSettings({ messageTextSize: s.messageTextSize, userTagSize: s.userTagSize, lobbyPfpSize: s.lobbyPfpSize })
+    const handler = (e) => setChatSettings({
+      messageTextSize: e.detail.messageTextSize,
+      userTagSize: e.detail.userTagSize,
+      lobbyPfpSize: e.detail.lobbyPfpSize,
+    })
+    window.addEventListener("studyhub-settings-changed", handler)
+    return () => window.removeEventListener("studyhub-settings-changed", handler)
   }, [])
 
   const checkPassword = () => {
