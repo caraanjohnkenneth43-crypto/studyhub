@@ -146,7 +146,10 @@ export function sendMessageHelper(id, user, { type, content, imageUrl, stickerId
     userEmail: user.email,
     timestamp: serverTimestamp(),
   }
-  if (type === "text") messageData.type = "text"
+  if (type === "text") {
+    messageData.type = "text"
+    messageData.text = content
+  }
   if (type === "image") {
     messageData.type = "image"
     messageData.text = content || ""
