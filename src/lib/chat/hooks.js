@@ -7,25 +7,25 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import { doc, getDoc, deleteDoc, collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, updateDoc, limit, getDocs } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 
-
 import { hasStoredPassword } from "@/lib/chat/password"
 
 /**
  * Load room document and determine if user is verified (public or has password).
  * Uses the API route instead of direct Firestore to avoid leaking the password field.
- * The password field is stripped server-side; verification is done via hasPassword
- * boolean and client-side stored password comparison.
  */
-export function useRoom(id) {
+export function useRoom(id, user) {
   const [room, setRoom] = useState(null)
   const [verified, setVerified] = useState(false)
   const [roomLoaded, setRoomLoaded] = useState(false)
 
   useEffect(() => {
     if (!id) return
-    fetch(`/api/chat/rooms/${id}`)
-      .then(r => r.json())
-      .then(data => {
+    const load = async () => {
+      const token = user ? await user.getIdToken() : null
+      const headers = token ? { Authorization: `Bearer ${token}` } : {}
+      try {
+        const r = await fetch(`/api/chat/rooms/${id}`, { headers })
+        const data = await r.json()
         if (data.error) {
           setRoom(null)
           setRoomLoaded(true)
@@ -38,12 +38,11 @@ export function useRoom(id) {
           const stored = hasStoredPassword(id)
           if (stored) setVerified(true)
         }
-        setRoomLoaded(true)
-      })
-      .catch(() => {
-        setRoomLoaded(true)
-      })
-  }, [id])
+      } catch {}
+      setRoomLoaded(true)
+    }
+    load()
+  }, [id, user])
 
   return { room, setRoom, verified, setVerified, roomLoaded }
 }
@@ -77,7 +76,7 @@ export function useMessages(id, verified) {
 /**
  * Fetch contributors and build uid→email map.
  */
-export function useUserMap() {
+export function useUserMap(user) {
   const [contributors, setContributors] = useState([])
   const [uidToEmail, setUidToEmail] = useState({})
 
@@ -87,14 +86,16 @@ export function useUserMap() {
     }).catch(() => {})
 
     const load = async () => {
+      const token = user ? await user.getIdToken() : null
+      const headers = token ? { Authorization: `Bearer ${token}` } : {}
       try {
-        const r = await fetch("/api/users?resolve=true")
+        const r = await fetch("/api/users?resolve=true", { headers })
         const d = await r.json()
         if (d.map) setUidToEmail(d.map)
       } catch {}
     }
     load()
-  }, [])
+  }, [user])
 
   return { contributors, uidToEmail }
 }

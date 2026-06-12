@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "../../AuthProvider"
+import { authFetch } from "@/lib/auth-fetch"
 
 export default function NotesGraphPage() {
   const { user, loading } = useAuth()
@@ -20,7 +21,7 @@ export default function NotesGraphPage() {
 
   useEffect(() => {
     if (!user) return
-    fetch(`/api/notes?userId=${user.uid}`)
+    authFetch("/api/notes")
       .then(r => r.json())
       .then(d => {
         if (d.error) {

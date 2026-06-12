@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useAuth } from "../AuthProvider"
+import { authFetch } from "@/lib/auth-fetch"
 import SettingsPanel, { loadSettings } from "../SettingsPanel"
 import { UserNameTag } from "@/app/UserTag"
 import { db } from "@/lib/firebase"
@@ -99,8 +100,9 @@ export default function DMPage() {
   }, [messages])
 
   useEffect(() => {
-    fetch("/api/users").then(r => r.json()).then(data => {
-      setUsers(data.users || [])
+    authFetch("/api/users").then(r => r.json()).then(data => {
+      if (data.error) console.error("users fetch error:", data)
+      else setUsers(data.users || [])
     })
   }, [])
 

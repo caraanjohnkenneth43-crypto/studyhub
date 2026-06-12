@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "../AuthProvider"
+import { authFetch } from "@/lib/auth-fetch"
 
 export default function NotesPage() {
   const { user, loading } = useAuth()
@@ -28,7 +29,7 @@ export default function NotesPage() {
 
   const fetchNotes = () => {
     if (!user) return
-    fetch(`/api/notes?userId=${user.uid}`)
+    authFetch("/api/notes")
       .then(r => r.json())
       .then(d => {
         if (d.error) {
@@ -59,10 +60,10 @@ export default function NotesPage() {
     setSaving(true)
     try {
       if (activeNote === "new") {
-        const res = await fetch("/api/notes", {
+        const res = await authFetch("/api/notes", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: user.uid, subjectId: filterSubject, title: editorTitle, content: editorContent }),
+          body: JSON.stringify({ subjectId: filterSubject, title: editorTitle, content: editorContent }),
         })
         const data = await res.json()
         if (data.error) {
@@ -73,7 +74,7 @@ export default function NotesPage() {
           fetchNotes()
         }
       } else {
-        const res = await fetch("/api/notes", {
+        const res = await authFetch("/api/notes", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ id: activeNote, title: editorTitle, content: editorContent }),
@@ -97,7 +98,7 @@ export default function NotesPage() {
   const deleteNote = async () => {
     if (!activeNote || activeNote === "new") return
     try {
-      const res = await fetch("/api/notes", {
+      const res = await authFetch("/api/notes", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: activeNote }),

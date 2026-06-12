@@ -8,6 +8,7 @@ import SettingsPanel, { loadSettings } from "@/app/SettingsPanel"
 import { useActiveRoom } from "@/app/ChatNotificationProvider"
 import { COLORS } from "@/lib/constants"
 import Navbar from "@/app/Navbar"
+import { authFetch } from "@/lib/auth-fetch"
 import { useRoom, useMessages, useUserMap, useAutoScroll, useScrollDetection, useSendTextMessage, useSendImageMessage, useSendStickerMessage, useStickers, useRoomMembers, useDeleteRoom, useBlockUser } from "@/lib/chat/hooks"
 import { resolveMessageEmail, getMessageNameStyle } from "@/lib/chat/gradients"
 import { UserNameTag } from "@/app/UserTag"
@@ -89,9 +90,9 @@ export default function ChatRoom() {
   const emojiPickerRef = useRef(null)
   const { setActiveRoom } = useActiveRoom()
 
-  const { room, setRoom, verified, setVerified, roomLoaded } = useRoom(id)
+  const { room, setRoom, verified, setVerified, roomLoaded } = useRoom(id, user)
   const { messages, error: messagesError } = useMessages(id, verified)
-  const { contributors, uidToEmail } = useUserMap()
+  const { contributors, uidToEmail } = useUserMap(user)
   const { stickers, addSticker } = useStickers(user?.uid)
   const members = useRoomMembers(id, room, verified, uidToEmail)
   useAutoScroll(messages, bottomRef)
@@ -125,9 +126,13 @@ export default function ChatRoom() {
 
   const checkPassword = async () => {
     try {
+      const token = user ? await user.getIdToken() : null
       const r = await fetch(`/api/chat/rooms/${id}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : "",
+        },
         body: JSON.stringify({ password }),
       })
       const d = await r.json()

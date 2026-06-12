@@ -6,6 +6,7 @@ import SettingsPanel from "../../SettingsPanel"
 import { useAuth, allowedAdmins } from "../../AuthProvider"
 import { COLORS, GRADIENTS, ADMIN_GRADIENTS, getAdminGradientClass } from "@/lib/constants"
 import DOMPurify from "dompurify"
+import { authFetch } from "@/lib/auth-fetch"
 
 const TABS = [
   { key: "subjects", label: "📚 Subjects" },
@@ -67,9 +68,9 @@ export default function AdminDashboard() {
   }, [])
 
   useEffect(() => {
-    if (tab === "feedback") fetch("/api/feedback").then(r => r.json()).then(setFeedback)
-    if (tab === "requests") fetch("/api/request").then(r => r.json()).then(setRequests)
-    if (tab === "users") fetch("/api/users").then(r => r.json()).then(data => { setUsers(data.users || data); setDebugInfo(data._debug || null) })
+    if (tab === "feedback") authFetch("/api/feedback").then(r => r.json()).then(d => { if (!d.error) setFeedback(d); else console.error("feedback fetch error:", d) })
+    if (tab === "requests") authFetch("/api/request").then(r => r.json()).then(d => { if (!d.error) setRequests(d); else console.error("requests fetch error:", d) })
+    if (tab === "users") authFetch("/api/users").then(r => r.json()).then(data => { setUsers(data.users || data); setDebugInfo(data._debug || null) })
   }, [tab])
 
   const save = async (newData) => {
@@ -398,7 +399,7 @@ export default function AdminDashboard() {
             <h2 className="text-lg font-semibold mb-1" style={{ color: "var(--c-fg)" }}>👤 All Users</h2>
             <p className="text-sm mb-4" style={{ color: "var(--c-muted)" }}>Every registered Firebase Auth user.</p>
             <div className="flex items-center gap-3 mb-4">
-              <button onClick={() => fetch("/api/users").then(r => r.json()).then(data => { setUsers(data.users || data); setDebugInfo(data._debug || null) })} className="text-sm" style={{ color: "var(--c-accent)" }}>↻ Refresh</button>
+              <button onClick={() => authFetch("/api/users").then(r => r.json()).then(data => { if (!data.error) { setUsers(data.users || data); setDebugInfo(data._debug || null) } })} className="text-sm" style={{ color: "var(--c-accent)" }}>↻ Refresh</button>
               {debugInfo && (
                 <span className="text-xs" style={{ color: debugInfo.usedAdmin ? "#16a34a" : "#d97706" }}>
                   {debugInfo.usedAdmin ? "✓ Admin SDK" : debugInfo.adminInitError ? `✗ Admin SDK error: ${debugInfo.adminInitError}` : "○ Fallback (no Admin SDK env vars)"}
@@ -436,7 +437,7 @@ export default function AdminDashboard() {
           <div className="flex-1 p-6 max-w-3xl">
             <h2 className="text-lg font-semibold mb-1" style={{ color: "var(--c-fg)" }}>💬 Feedback</h2>
             <p className="text-sm mb-4" style={{ color: "var(--c-muted)" }}>What students are saying about StudyHub.</p>
-            <button onClick={() => fetch("/api/feedback").then(r => r.json()).then(setFeedback)} className="text-sm mb-4" style={{ color: "var(--c-accent)" }}>↻ Refresh</button>
+            <button onClick={() => authFetch("/api/feedback").then(r => r.json()).then(d => { if (!d.error) setFeedback(d) })} className="text-sm mb-4" style={{ color: "var(--c-accent)" }}>↻ Refresh</button>
             {feedback.length === 0 ? (
               <p className="text-sm" style={{ color: "var(--c-subtle)" }}>No feedback yet.</p>
             ) : (
@@ -479,7 +480,7 @@ export default function AdminDashboard() {
           <div className="flex-1 p-6 max-w-4xl">
             <h2 className="text-lg font-semibold mb-1" style={{ color: "var(--c-fg)" }}>🚀 Student Requests</h2>
             <p className="text-sm mb-4" style={{ color: "var(--c-muted)" }}>Students request changes to classroom content. Resolve them here.</p>
-            <button onClick={() => fetch("/api/request").then(r => r.json()).then(setRequests)} className="text-sm mb-4" style={{ color: "#7c3aed" }}>↻ Refresh</button>
+            <button onClick={() => authFetch("/api/request").then(r => r.json()).then(d => { if (!d.error) setRequests(d) })} className="text-sm mb-4" style={{ color: "#7c3aed" }}>↻ Refresh</button>
             {requests.length === 0 ? (
               <p className="text-sm" style={{ color: "var(--c-subtle)" }}>No requests yet.</p>
             ) : (
