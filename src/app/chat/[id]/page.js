@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { useAuth, allowedAdmins } from "@/app/AuthProvider"
-import SettingsPanel from "@/app/SettingsPanel"
+import SettingsPanel, { loadSettings } from "@/app/SettingsPanel"
 import { useActiveRoom } from "@/app/ChatNotificationProvider"
 import { COLORS } from "@/lib/constants"
 import Navbar from "@/app/Navbar"
@@ -80,6 +80,7 @@ export default function ChatRoom() {
   const [showMembersPanel, setShowMembersPanel] = useState(false)
   const [imagePreview, setImagePreview] = useState(null)
   const [activeEmojiCategory, setActiveEmojiCategory] = useState(0)
+  const [chatSettings, setChatSettings] = useState({ messageTextSize: 14, userTagSize: 12, lobbyPfpSize: 32 })
   const bottomRef = useRef(null)
   const messagesRef = useRef(null)
   const emojiPickerRef = useRef(null)
@@ -106,6 +107,11 @@ export default function ChatRoom() {
     setActiveRoom?.(verified ? id : null)
     return () => setActiveRoom?.(null)
   }, [verified, id, setActiveRoom])
+
+  useEffect(() => {
+    const s = loadSettings()
+    setChatSettings({ messageTextSize: s.messageTextSize, userTagSize: s.userTagSize, lobbyPfpSize: s.lobbyPfpSize })
+  }, [])
 
   const checkPassword = () => {
     if (password === room.password) {
@@ -261,8 +267,8 @@ export default function ChatRoom() {
               <div className="space-y-1.5 max-h-80 overflow-y-auto">
                 {members.map(member => (
                   <div key={member.uid} className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-black/5 transition-colors">
-                    <div className="relative w-8 h-8 shrink-0">
-                      <div className="w-full h-full rounded-full flex items-center justify-center text-xs font-medium text-white" style={{ background: getAvatarColor(member.email) }}>
+                    <div className="relative shrink-0" style={{ width: chatSettings.lobbyPfpSize, height: chatSettings.lobbyPfpSize }}>
+                      <div className="w-full h-full rounded-full flex items-center justify-center text-xs font-medium text-white" style={{ background: getAvatarColor(member.email), fontSize: chatSettings.lobbyPfpSize * 0.4 }}>
                         {member.displayName.charAt(0).toUpperCase()}
                       </div>
                       <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-[var(--c-card)]
@@ -310,6 +316,7 @@ export default function ChatRoom() {
                 name={msg.userName}
                 admins={allowedAdmins}
                 contributors={contributors}
+                userTagSize={chatSettings.userTagSize}
               />
               {(msg.type === "image" || msg.type === "sticker") && msg.imageUrl && (
                 <img
@@ -320,7 +327,7 @@ export default function ChatRoom() {
                 />
               )}
               {msg.text && (
-                <span className="text-xs break-words flex-1" style={{ color: "var(--c-muted)", overflowWrap: "anywhere", wordBreak: "break-word" }}>{msg.text}</span>
+                <span className="break-words flex-1" style={{ color: "var(--c-muted)", overflowWrap: "anywhere", wordBreak: "break-word", fontSize: chatSettings.messageTextSize + "px" }}>{msg.text}</span>
               )}
               {msg.timestamp && (
                 <span className="text-[10px] shrink-0 mt-1" style={{ color: "var(--c-subtle)" }}>

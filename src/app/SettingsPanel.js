@@ -15,28 +15,17 @@ const CAMEL_CASE_REGEX = /([A-Z])/g
 const defaults = {
   dark: false,
   fontSize: 16,
-  theme: "blue",
-  pfpSize: "medium",
   // Lobby/text settings
   messageTextSize: 14,
   userTagSize: 12,
   lobbyPfpSize: 32,
   // Color theme settings
-  colorThemeCategory: "default", // "default", "light", "dark", "gradient"
+  colorThemeCategory: "default",
   customColors: {
     light: { primary: "#2563eb", secondary: "#64748b", accent: "#2563eb", background: "#f8fafc", surface: "#ffffff", text: "#0f172a", muted: "#94a3b8" },
     dark: { primary: "#3b82f6", secondary: "#94a3b8", accent: "#3b82f6", background: "#0f172a", surface: "#1e293b", text: "#e2e8f0", muted: "#64748b" }
   }
 }
-
-const THEMES = [
-  { id: "blue", label: "Blue", color: "#2563eb" },
-  { id: "green", label: "Green", color: "#16a34a" },
-  { id: "purple", label: "Purple", color: "#7c3aed" },
-  { id: "orange", label: "Orange", color: "#ea580c" },
-  { id: "pink", label: "Pink", color: "#db2777" },
-  { id: "teal", label: "Teal", color: "#0d9488" },
-]
 
 const legacyFontMap = { small: 14, medium: 16, large: 18 }
 
@@ -81,7 +70,7 @@ function apply(settings) {
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
 }
 
-export { defaults as settingsDefaults, load as loadSettings, apply as applySettings, THEMES, SETTINGS_KEY }
+export { defaults as settingsDefaults, load as loadSettings, apply as applySettings, SETTINGS_KEY }
 
 function playNotificationSound() {
   try {
@@ -320,43 +309,6 @@ export function SettingsContent({ settings, onUpdate, user }) {
             />
           </div>
 
-          <div>
-            <span className="text-sm block mb-1" style={{ color: "var(--c-fg)" }}>Theme</span>
-            <p className="text-xs mb-1" style={{ color: "var(--c-subtle)" }}>Also available in the top navigation bar</p>
-            <div className="flex gap-2 flex-wrap">
-              {THEMES.map(t => (
-                <button key={t.id} onClick={() => onUpdate("theme", t.id)}
-                  className="w-6 h-6 rounded-full border-2 transition-transform"
-                  style={{
-                    background: t.color,
-                    borderColor: settings.theme === t.id ? "var(--c-fg)" : "transparent",
-                    transform: settings.theme === t.id ? "scale(1.2)" : "scale(1)",
-                  }}
-                  title={t.label}
-                />
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--c-muted)" }}>
-              PFP Size in Lobbies
-            </h4>
-            <div className="flex gap-2">
-              {["small", "medium", "large"].map(size => (
-                <button key={size} onClick={() => onUpdate("pfpSize", size)} 
-                  className={`px-2 py-1 rounded text-xs font-medium transition-colors ${settings.pfpSize === size ? "" : "opacity-50"}`}
-                  style={{
-                    background: settings.pfpSize === size ? "var(--c-accent)" : "var(--c-bg)",
-                    color: settings.pfpSize === size ? "white" : "var(--c-fg)",
-                    borderColor: "var(--c-border)",
-                  }}
-                >
-                  {size.charAt(0).toUpperCase() + size.slice(1)}
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
 

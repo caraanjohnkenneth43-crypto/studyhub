@@ -45,17 +45,19 @@ export function Avatar({ email, name, size = 28, role }) {
   )
 }
 
-export function UserNameTag({ email, name, role, admins, contributors, gradient }) {
+export function UserNameTag({ email, name, role, admins, contributors, gradient, userTagSize = 12 }) {
   const gradientClass = gradient || getGradientClass(email, admins || [], contributors || [])
   const userRole = role || (admins?.includes(email) ? "admin" : contributors?.includes(email) ? "contributor" : null)
+  const avatarSize = userTagSize + 4
 
   return (
     <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg" style={{
       background: "rgba(0,0,0,0.06)",
       backdropFilter: "blur(4px)",
       WebkitBackdropFilter: "blur(4px)",
+      fontSize: userTagSize + "px",
     }}>
-      <Avatar email={email} name={name} size={16} role={userRole} />
+      <Avatar email={email} name={name} size={avatarSize} role={userRole} />
       <span className={gradientClass} style={{ color: gradientClass ? undefined : "var(--c-fg)" }}>
         {name || email?.split("@")[0] || "Unknown"}
       </span>
