@@ -1,26 +1,24 @@
 import { adminDB } from "@/lib/firebase-admin"
+import { verifyToken } from "@/lib/auth-middleware"
 
 export async function GET(request) {
   try {
+    const auth = await verifyToken(request)
+    if (!auth.uid) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get("userId")
     const subjectId = searchParams.get("subjectId")
-    let ref = adminDB.collection("notes")
-    if (userId) ref = ref.where("userId", "==", userId)
-    if (subjectId) ref = ref.where("subjectId", "==", subjectId)
-    
-    // Try with orderBy first (requires composite index)
-    let snap
-    try {
-      snap = await ref.orderBy("updatedAt", "desc").get()
-    } catch (orderError) {
-      // Fallback: fetch without orderBy and sort in memory
-      console.warn("orderBy query failed, falling back to in-memory sort:", orderError.message)
-      snap = await ref.get()
+    if (userId && userId !== auth.uid) {
+      return Response.json({ error: "Forbidden" }, { status: 403 })
     }
+    let ref = adminDB.collection("notes")
+    ref = ref.where("userId", "==", auth.uid)
+    if (subjectId) ref = ref.where("subjectId", "==", subjectId)
+    const snap = await ref.orderBy("updatedAt", "desc").get()
     const notes = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-    // Sort in memory if we couldn't use orderBy
-    notes.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
     return Response.json({ notes })
   } catch (e) {
     return Response.json({ notes: [], error: e.message }, { status: 500 })
@@ -29,13 +27,17 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
-    const { userId, subjectId, title, content } = await request.json()
-    if (!userId || !content) {
-      return Response.json({ error: "userId and content required" }, { status: 400 })
+    const auth = await verifyToken(request)
+    if (!auth.uid) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 })
+    }
+    const { subjectId, title, content } = await request.json()
+    if (!content) {
+      return Response.json({ error: "content required" }, { status: 400 })
     }
     const ref = adminDB.collection("notes").doc()
     const note = {
-      userId,
+      userId: auth.uid,
       subjectId: subjectId || "",
       title: title?.trim() || "Untitled",
       content,
@@ -51,8 +53,15 @@ export async function POST(request) {
 
 export async function PUT(request) {
   try {
+    const auth = await verifyToken(request)
+    if (!auth.uid) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 })
+    }
     const { id, title, content } = await request.json()
     if (!id) return Response.json({ error: "id required" }, { status: 400 })
+    const existing = await adminDB.collection("notes").doc(id).get()
+    if (!existing.exists) return Response.json({ error: "Not found" }, { status: 404 })
+    if (existing.data().userId !== auth.uid) return Response.json({ error: "Forbidden" }, { status: 403 })
     const update = { updatedAt: new Date().toISOString() }
     if (title !== undefined) update.title = title.trim() || "Untitled"
     if (content !== undefined) update.content = content
@@ -65,8 +74,15 @@ export async function PUT(request) {
 
 export async function DELETE(request) {
   try {
+    const auth = await verifyToken(request)
+    if (!auth.uid) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 })
+    }
     const { id } = await request.json()
     if (!id) return Response.json({ error: "id required" }, { status: 400 })
+    const existing = await adminDB.collection("notes").doc(id).get()
+    if (!existing.exists) return Response.json({ error: "Not found" }, { status: 404 })
+    if (existing.data().userId !== auth.uid) return Response.json({ error: "Forbidden" }, { status: 403 })
     await adminDB.collection("notes").doc(id).delete()
     return Response.json({ success: true })
   } catch (e) {

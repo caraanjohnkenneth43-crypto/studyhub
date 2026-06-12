@@ -41,8 +41,10 @@ export async function GET(request) {
         memberCount = 0
       }
 
+      const { password, ...safeData } = data
       return {
-        ...data,
+        ...safeData,
+        hasPassword: safeData.type === "private" && !!password,
         messageCount,
         memberCount,
         members,

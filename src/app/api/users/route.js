@@ -1,6 +1,30 @@
 import { adminAuth, adminDB, initError as adminInitError } from "@/lib/firebase-admin"
+import { verifyToken } from "@/lib/auth-middleware"
+import { ADMIN_EMAILS } from "@/lib/constants"
 
-export async function GET() {
+export async function GET(request) {
+  const auth = await verifyToken(request)
+  if (!auth.uid) {
+    return Response.json({ users: [], _debug: { error: "Unauthorized" } }, { status: 401 })
+  }
+
+  const { searchParams } = new URL(request.url)
+  const isResolve = searchParams.get("resolve") === "true"
+
+  if (isResolve) {
+    const snap = await adminDB.collection("users").get()
+    const map = {}
+    snap.docs.forEach(d => {
+      const data = d.data()
+      if (data.uid && data.email) map[data.uid] = data.email
+    })
+    return Response.json({ map })
+  }
+
+  if (!auth.email || !ADMIN_EMAILS.includes(auth.email)) {
+    return Response.json({ error: "Forbidden" }, { status: 403 })
+  }
+
   let usedAdmin = false
 
   try {
@@ -10,6 +34,7 @@ export async function GET() {
       const users = list.users.map(u => ({
         uid: u.uid,
         email: u.email || "no-email",
+        displayName: u.displayName,
         createdAt: u.metadata.creationTime,
         lastSeen: u.metadata.lastSignInTime,
       }))

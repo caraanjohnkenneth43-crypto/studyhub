@@ -7,7 +7,7 @@ import { useAuth } from "../AuthProvider"
 import SettingsPanel, { loadSettings } from "../SettingsPanel"
 import { UserNameTag } from "@/app/UserTag"
 import { db } from "@/lib/firebase"
-import { collection, query, where, orderBy, onSnapshot, doc as fsDoc } from "firebase/firestore"
+import { collection, query, where, onSnapshot, doc as fsDoc } from "firebase/firestore"
 import { COLORS } from "@/lib/constants"
 
 function formatTime(ts) {
@@ -27,11 +27,14 @@ export default function DMPage() {
   const [showNewDM, setShowNewDM] = useState(false)
   const [search, setSearch] = useState("")
   const [confirmDelete, setConfirmDelete] = useState(null)
+  const [activeConvMeta, setActiveConvMeta] = useState(null)
   const [chatSettings, setChatSettings] = useState(() => {
     const s = typeof window !== "undefined" ? loadSettings() : { messageTextSize: 14, userTagSize: 12 }
     return { messageTextSize: s.messageTextSize, userTagSize: s.userTagSize }
   })
   const messagesEndRef = useRef(null)
+  const activeConvRef = useRef(activeConv)
+  activeConvRef.current = activeConv
 
   useEffect(() => {
     if (!loading && !user) router.push("/login")
@@ -57,16 +60,37 @@ export default function DMPage() {
         .filter(c => !c.deleted)
         .sort((a, b) => new Date(b.lastTimestamp || 0) - new Date(a.lastTimestamp || 0))
       setConversations(list)
-    })
+      if (activeConvRef.current && list.some(c => c.id === activeConvRef.current)) {
+        setActiveConvMeta(null)
+      }
+    }, (err) => console.error("conversations onSnapshot error:", err))
     return unsub
   }, [user])
 
   useEffect(() => {
     if (!activeConv) { setMessages([]); return }
-    const q = query(collection(db, "conversations", activeConv, "messages"), orderBy("timestamp", "asc"))
-    const unsub = onSnapshot(q, (snap) => {
-      setMessages(snap.docs.map(d => ({ id: d.id, ...d.data() })))
-    })
+    const unsub = onSnapshot(
+      collection(db, "conversations", activeConv, "messages"),
+      (snap) => {
+        const msgs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+        msgs.sort((a, b) => {
+          const ta = a.timestamp?.seconds ? a.timestamp.seconds * 1000 : new Date(a.timestamp || 0).getTime()
+          const tb = b.timestamp?.seconds ? b.timestamp.seconds * 1000 : new Date(b.timestamp || 0).getTime()
+          return ta - tb
+        })
+        setMessages(prev => {
+          const temps = prev.filter(m => m.id?.startsWith?.("temp_"))
+          const canonicalKeys = new Set(msgs.map(m => `${m.senderId}:${m.text}`))
+          const unresolvedTemps = temps.filter(t => !canonicalKeys.has(`${t.senderId}:${t.text}`))
+          return [...msgs, ...unresolvedTemps].sort((a, b) => {
+            const ta = a.timestamp?.seconds ? a.timestamp.seconds * 1000 : new Date(a.timestamp || 0).getTime()
+            const tb = b.timestamp?.seconds ? b.timestamp.seconds * 1000 : new Date(b.timestamp || 0).getTime()
+            return ta - tb
+          })
+        })
+      },
+      (err) => console.error("messages onSnapshot error:", err)
+    )
     return unsub
   }, [activeConv])
 
@@ -75,11 +99,10 @@ export default function DMPage() {
   }, [messages])
 
   useEffect(() => {
-    if (!showNewDM) return
     fetch("/api/users").then(r => r.json()).then(data => {
       setUsers(data.users || [])
     })
-  }, [showNewDM])
+  }, [])
 
   const startConversation = async (otherUid) => {
     const participants = [user.uid, otherUid].sort()
@@ -89,7 +112,15 @@ export default function DMPage() {
       body: JSON.stringify({ participants }),
     })
     const data = await res.json()
+    if (!data.id) { console.error("startConversation failed:", data); return }
     setShowNewDM(false)
+    const otherUser = users.find(u => u.uid === otherUid)
+    const otherName = otherUser?.displayName || otherUser?.email || otherUid.slice(0, 8)
+    setConversations(prev => {
+      if (prev.some(c => c.id === data.id)) return prev
+      return [{ id: data.id, participants, lastMessage: "", lastTimestamp: data.lastTimestamp, createdAt: data.createdAt }, ...prev]
+    })
+    setActiveConvMeta({ id: data.id, otherName })
     setActiveConv(data.id)
   }
 
@@ -97,7 +128,16 @@ export default function DMPage() {
     e.preventDefault()
     if (!input.trim() || !activeConv) return
     const text = input.trim()
+    const tempId = "temp_" + Date.now()
+    const optimisticMsg = {
+      id: tempId,
+      senderId: user.uid,
+      senderName: user.displayName || user.email.split("@")[0],
+      text,
+      timestamp: new Date().toISOString(),
+    }
     setInput("")
+    setMessages(prev => [...prev, optimisticMsg])
     await fetch(`/api/conversations/${activeConv}/messages`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -134,8 +174,8 @@ export default function DMPage() {
   }
 
   return (
-    <div className="min-h-screen flex" style={{ background: "var(--c-bg)" }}>
-      <div className="w-80 shrink-0 border-r flex flex-col" style={{ borderColor: "var(--c-border)", background: "var(--c-card)" }}>
+    <div className="h-screen flex overflow-hidden" style={{ background: "var(--c-bg)" }}>
+      <div className="w-80 shrink-0 border-r flex flex-col overflow-hidden" style={{ borderColor: "var(--c-border)", background: "var(--c-card)" }}>
         <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: "var(--c-border)" }}>
           <h1 className="text-base font-bold" style={{ color: "var(--c-fg)" }}>Direct Messages</h1>
           <button onClick={() => setShowNewDM(true)} className="text-lg leading-none px-2 py-1 rounded" style={{ color: "var(--c-accent)" }}>+</button>
@@ -201,7 +241,7 @@ export default function DMPage() {
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col overflow-hidden">
         {!activeConv ? (
           <div className="flex-1 flex items-center justify-center">
             <p style={{ color: "var(--c-subtle)" }}>Select a conversation or start a new one</p>
@@ -213,7 +253,7 @@ export default function DMPage() {
                 <button onClick={() => setActiveConv(null)} className="text-sm px-2 py-1 rounded transition-colors hover:bg-black/5" style={{ color: "var(--c-muted)" }}>
                   &larr;
                 </button>
-                <span className="text-base font-semibold" style={{ color: "var(--c-fg)" }}>{activeConvData ? otherParticipants(activeConvData) : "..."}</span>
+                <span className="text-base font-semibold" style={{ color: "var(--c-fg)" }}>{activeConvData ? otherParticipants(activeConvData) : activeConvMeta?.otherName || "..."}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Link href="/dashboard" className="text-xs px-2 py-0.5 rounded" style={{ color: "var(--c-subtle)" }}>Dashboard</Link>

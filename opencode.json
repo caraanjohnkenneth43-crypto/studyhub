@@ -1,21 +1,58 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "instructions": ["AGENTS.md"],
+  "model": "opencode/deepseek-v4-flash",
+  "small_model": "opencode/deepseek-v4-flash",
   "agent": {
+    "build": {
+      "model": "opencode/deepseek-v4-flash",
+      "prompt": "You are a senior engineer. Write production-grade code. Prefer thorough, complete implementations.",
+      "description": "Complex coding, architecture, refactoring — high effort",
+      "temperature": 0.2
+    },
+    "plan": {
+      "model": "opencode/deepseek-v4-flash",
+      "prompt": "You are a solutions architect. Analyze code and design solutions without making changes. Be concise.",
+      "description": "Planning, analysis, research — no code changes",
+      "temperature": 0.1
+    },
     "chat": {
-      "prompt": "You are a chat system specialist. Read AGENTS-chat.md and AGENTS-firebase.md for full context.",
-      "description": "Chat system specialist — messages, passwords, moderation, notifications",
-      "hidden": false
+      "prompt": "You are a chat system specialist. Read AGENTS-chat.md and AGENTS-firebase.md for full context. Be concise and direct.",
+      "description": "Chat system — messages, passwords, moderation, notifications — low complexity",
+      "temperature": 0.3
     },
     "admin": {
-      "prompt": "You are an admin panel specialist. Read AGENTS-database.md and AGENTS-firebase.md for full context.",
-      "description": "Admin panel specialist — CRUD, contributors, users, feedback",
-      "hidden": false
+      "prompt": "You are an admin panel specialist. Read AGENTS-database.md and AGENTS-firebase.md for full context. Be concise and direct.",
+      "description": "Admin panel — CRUD, contributors, users, feedback — medium complexity",
+      "temperature": 0.3
     },
     "security": {
-      "prompt": "You are a security specialist. Read AGENTS-firebase.md and AGENTS-database.md for full context.",
-      "description": "Security & infrastructure — Firestore rules, Auth, env vars",
+      "model": "opencode/deepseek-v4-flash",
+      "prompt": "You are a security specialist. Read AGENTS-firebase.md and AGENTS-database.md for full context. Be thorough and cautious.",
+      "description": "Security & infrastructure — Firestore rules, Auth, env vars — high complexity",
+      "temperature": 0.1
+    },
+    "fast": {
+      "model": "opencode/deepseek-v4-flash",
+      "prompt": "You are a helpful assistant. Answer questions and make small edits. Be extremely concise — prefer one-line answers and minimal changes.",
+      "description": "Quick Q&A, simple edits, explanations — minimal cost",
+      "temperature": 0.5,
       "hidden": false
+    }
+  },
+  "command": {
+    "security-audit": {
+      "template": "Review the security of $ARGUMENTS. Check Firestore rules, Auth config, env vars, and API routes.",
+      "description": "Security audit — routes to security agent",
+      "agent": "security"
+    },
+    "explain": {
+      "template": "Explain what $ARGUMENTS does in simple terms.",
+      "description": "Quick explanation — uses @fast (cheapest model)"
+    },
+    "refactor": {
+      "template": "Refactor $ARGUMENTS for better maintainability, performance, and readability.",
+      "description": "Complex refactoring — routes to build agent"
     }
   },
   "mcp": {

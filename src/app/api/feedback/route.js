@@ -1,4 +1,6 @@
 import { adminDB } from "@/lib/firebase-admin"
+import { verifyToken } from "@/lib/auth-middleware"
+import { ADMIN_EMAILS } from "@/lib/constants"
 
 export async function POST(request) {
   try {
@@ -18,7 +20,18 @@ export async function POST(request) {
   }
 }
 
-export async function GET() {
+export async function GET(request) {
+  const auth = await verifyToken(request)
+  if (!auth.email) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 })
+  }
+  const dataSnap = await adminDB.collection("app").doc("data").get()
+  const data = dataSnap.data() || {}
+  const contributors = data.contributors || []
+  const isAllowed = ADMIN_EMAILS.includes(auth.email) || contributors.includes(auth.email)
+  if (!isAllowed) {
+    return Response.json({ error: "Forbidden" }, { status: 403 })
+  }
   try {
     const snap = await adminDB.collection("feedback").orderBy("timestamp", "desc").get()
     const feedback = snap.docs.map((d) => ({ id: d.id, ...d.data() }))

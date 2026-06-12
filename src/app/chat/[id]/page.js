@@ -123,12 +123,22 @@ export default function ChatRoom() {
     return () => window.removeEventListener("studyhub-settings-changed", handler)
   }, [])
 
-  const checkPassword = () => {
-    if (password === room.password) {
-      setVerified(true)
-      setPasswordError(false)
-      savePassword(id, password)
-    } else {
+  const checkPassword = async () => {
+    try {
+      const r = await fetch(`/api/chat/rooms/${id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      })
+      const d = await r.json()
+      if (d.ok) {
+        setVerified(true)
+        setPasswordError(false)
+        savePassword(id, password)
+      } else {
+        setPasswordError(true)
+      }
+    } catch {
       setPasswordError(true)
     }
   }

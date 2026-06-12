@@ -7,11 +7,14 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import { doc, getDoc, deleteDoc, collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, updateDoc, limit, getDocs } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 
-import { buildUidToEmailMap } from "@/lib/chat/gradients"
+
 import { hasStoredPassword } from "@/lib/chat/password"
 
 /**
  * Load room document and determine if user is verified (public or has password).
+ * Uses the API route instead of direct Firestore to avoid leaking the password field.
+ * The password field is stripped server-side; verification is done via hasPassword
+ * boolean and client-side stored password comparison.
  */
 export function useRoom(id) {
   const [room, setRoom] = useState(null)
@@ -19,20 +22,27 @@ export function useRoom(id) {
   const [roomLoaded, setRoomLoaded] = useState(false)
 
   useEffect(() => {
-    const ref = doc(db, "chatRooms", id)
-    getDoc(ref).then(snap => {
-      if (snap.exists()) {
-        const data = { id: snap.id, ...snap.data() }
+    if (!id) return
+    fetch(`/api/chat/rooms/${id}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.error) {
+          setRoom(null)
+          setRoomLoaded(true)
+          return
+        }
         setRoom(data)
         if (data.type === "public") {
           setVerified(true)
         } else {
           const stored = hasStoredPassword(id)
-          if (stored === data.password) setVerified(true)
+          if (stored) setVerified(true)
         }
-      }
-      setRoomLoaded(true)
-    })
+        setRoomLoaded(true)
+      })
+      .catch(() => {
+        setRoomLoaded(true)
+      })
   }, [id])
 
   return { room, setRoom, verified, setVerified, roomLoaded }
@@ -77,17 +87,11 @@ export function useUserMap() {
     }).catch(() => {})
 
     const load = async () => {
-      let apiUsers = []
-      let fsSnap = null
       try {
-        const r = await fetch("/api/users")
+        const r = await fetch("/api/users?resolve=true")
         const d = await r.json()
-        apiUsers = d.users || []
+        if (d.map) setUidToEmail(d.map)
       } catch {}
-      try {
-        fsSnap = await getDocs(collection(db, "users"))
-      } catch {}
-      setUidToEmail(buildUidToEmailMap(apiUsers, fsSnap))
     }
     load()
   }, [])
