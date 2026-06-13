@@ -8,85 +8,102 @@ import { getAvatarColor } from "../lib/chat/gradients"
 
 const HIDDEN_PATHS = ["/login", "/signup", "/admin", "/admin/dashboard", "/admin/console"]
 
-export default function Navbar({ 
-  room, 
-  onBack, 
-  onMembersToggle, 
-  showMembersPanel, 
-  membersCount 
+export default function Navbar({
+  room,
+  onBack,
+  onMembersToggle,
+  showMembersPanel,
+  membersCount,
+  onMenuToggle,
+  hideNavLinks,
 }) {
   const { user, loading, isAdmin, isContributor, logOut } = useAuth()
   const pathname = usePathname()
 
   if (loading || !user) return null
-  if (HIDDEN_PATHS.some(p => pathname.startsWith(p))) return null
+  if (HIDDEN_PATHS.some((p) => pathname.startsWith(p))) return null
 
-  // Room-aware mode: show room controls
+  // Room-aware mode
   if (room) {
     return (
-      <nav className="flex items-center justify-between px-4 py-2 border-b shrink-0 sticky top-0 z-10" style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }}>
+      <nav
+        className="flex items-center justify-between px-4 py-2 border-b shrink-0 sticky top-0 z-10"
+        style={{ background: "var(--c-card)", borderColor: "var(--c-border)", height: "var(--topbar-h)" }}
+      >
         <div className="flex items-center gap-3">
           <button onClick={onBack} className="text-sm px-2 py-1 rounded transition-colors hover:bg-black/5" style={{ color: "var(--c-muted)" }}>
             &larr;
           </button>
-          <span className="text-lg font-bold" style={{ color: "var(--c-fg)" }}># {room.name || "..."}</span>
-          <Link href="/dashboard" className="text-xs px-2 py-0.5 rounded" style={{ color: "var(--c-subtle)" }}>Dashboard</Link>
+          <span className="text-lg font-bold" style={{ color: "var(--c-fg)" }}>
+            # {room.name || "..."}
+          </span>
+          <Link href="/dashboard" className="text-xs px-2 py-0.5 rounded" style={{ color: "var(--c-subtle)" }}>
+            Dashboard
+          </Link>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-xs hidden sm:inline" style={{ color: "var(--c-subtle)" }}>{user.email}</span>
-          <button 
-            onClick={onMembersToggle} 
+          <span className="text-xs hidden sm:inline" style={{ color: "var(--c-subtle)" }}>
+            {user.email}
+          </span>
+          <button
+            onClick={onMembersToggle}
             className="text-xs px-2 py-1 rounded hover:bg-black/5 transition-colors flex items-center gap-1"
             style={{ color: "var(--c-fg)" }}
           >
             👥 {membersCount || 0}
           </button>
           <SettingsPanel />
-          <button onClick={logOut} className="text-xs" style={{ color: "var(--c-subtle)" }}>Log out</button>
+          <button onClick={logOut} className="text-xs" style={{ color: "var(--c-subtle)" }}>
+            Log out
+          </button>
         </div>
       </nav>
     )
   }
 
-  // Default mode: global navigation
+  // Default mode
   return (
-    <nav className="flex items-center justify-between px-4 py-2 border-b shrink-0 sticky top-0 z-10" style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }}>
-      <div className="flex items-center gap-4">
+    <nav
+      className="flex items-center justify-between px-4 py-2 border-b shrink-0 sticky top-0 z-10"
+      style={{ background: "var(--c-card)", borderColor: "var(--c-border)", height: "var(--topbar-h)" }}
+    >
+      <div className="flex items-center gap-3">
+        {onMenuToggle && (
+          <button
+            onClick={onMenuToggle}
+            className="text-lg px-2 py-1 rounded md:hidden hover:bg-black/5 transition-colors"
+            style={{ color: "var(--c-muted)" }}
+          >
+            ☰
+          </button>
+        )}
         <Link href="/dashboard" className="text-sm font-bold" style={{ color: "var(--c-fg)" }}>
           StudyHub
-        </Link>
-        <Link href="/dashboard" className="text-xs" style={{ color: pathname.startsWith("/dashboard") ? "var(--c-accent)" : "var(--c-subtle)" }}>
-          Dashboard
-        </Link>
-        <Link href="/chat" className="text-xs" style={{ color: pathname.startsWith("/chat") ? "var(--c-accent)" : "var(--c-subtle)" }}>
-          Chat
-        </Link>
-        <Link href="/dm" className="text-xs" style={{ color: pathname.startsWith("/dm") ? "var(--c-accent)" : "var(--c-subtle)" }}>
-          Messages
-        </Link>
-        <Link href="/browse-quizzes" className="text-xs" style={{ color: pathname === "/browse-quizzes" || pathname === "/create-quiz" ? "var(--c-accent)" : "var(--c-subtle)" }}>
-          Quiz Sets
-        </Link>
-        <Link href="/notes" className="text-xs" style={{ color: pathname.startsWith("/notes") && !pathname.includes("/graph") ? "var(--c-accent)" : "var(--c-subtle)" }}>
-          Notes
-        </Link>
-        <Link href="/notes/graph" className="text-xs" style={{ color: pathname.includes("/graph") ? "var(--c-accent)" : "var(--c-subtle)" }}>
-          Graph
         </Link>
       </div>
       <div className="flex items-center gap-2">
         {(isAdmin || isContributor) && (
-          <Link href="/admin/dashboard" className="text-xs px-2 py-1 rounded" style={{ background: "var(--c-bg)", color: "var(--c-subtle)" }}>
+          <Link
+            href="/admin/dashboard"
+            className="text-xs px-2 py-1 rounded"
+            style={{ background: "var(--c-bg)", color: "var(--c-subtle)" }}
+          >
             Admin
           </Link>
         )}
         {isAdmin && (
-          <Link href="/admin/console" className="text-xs px-2 py-1 rounded font-mono" style={{ background: "#1a1a1a", color: "#00ff00" }}>
+          <Link
+            href="/admin/console"
+            className="text-xs px-2 py-1 rounded font-mono"
+            style={{ background: "#1a1a1a", color: "#00ff00" }}
+          >
             &gt;_ Console
           </Link>
         )}
         <SettingsPanel />
-        <Link href="/profile" className="text-xs hidden sm:inline" style={{ color: "var(--c-subtle)" }}>{user.email}</Link>
+        <Link href="/profile" className="text-xs hidden sm:inline" style={{ color: "var(--c-subtle)" }}>
+          {user.email}
+        </Link>
         <button onClick={logOut} className="text-xs px-2 py-1 rounded" style={{ color: "var(--c-subtle)" }}>
           Log out
         </button>

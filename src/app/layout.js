@@ -1,7 +1,9 @@
 import "./globals.css";
+import "@/styles/design-tokens.css";
 import { AuthProvider } from "./AuthProvider"
 import { ChatNotificationProvider } from "./ChatNotificationProvider"
-import Navbar from "./Navbar"
+import { ToastProvider } from "@/components/ui/Toast"
+import AppShell from "@/components/layout/AppShell"
 
 export const metadata = {
   title: "StudyHub",
@@ -41,8 +43,11 @@ export default function RootLayout({ children }) {
       <body className="min-h-full flex flex-col">
         <AuthProvider>
           <ChatNotificationProvider>
-            <Navbar />
-            {children}
+            <ToastProvider>
+              <AppShell>
+                {children}
+              </AppShell>
+            </ToastProvider>
           </ChatNotificationProvider>
         </AuthProvider>
       </body>

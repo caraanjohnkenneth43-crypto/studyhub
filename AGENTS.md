@@ -54,4 +54,3 @@ git add -A && git commit -m "..." && git push  # deploy
 - `FIREBASE_SERVICE_ACCOUNT` must be single-line JSON with `\n` escapes
 - `app/data` is single-doc — concurrent saves clobber
 - Firestore rules deployed — API routes must use Admin SDK (not client db)
-- Quizzes need stable `id` fields before scoring/achievements can work

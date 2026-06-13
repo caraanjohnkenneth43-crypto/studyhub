@@ -60,6 +60,21 @@
       "type": "remote",
       "url": "https://api.refero.design/mcp",
       "enabled": true
+    },
+    "filesystem": {
+      "type": "local",
+      "command": ["npx", "-y", "@modelcontextprotocol/server-filesystem", "/home/caraa/studyhub/node_modules/motion", "/home/caraa/studyhub/node_modules/@react-three", "/home/caraa/studyhub/node_modules/use-sound", "/home/caraa/studyhub/node_modules/lenis", "/home/caraa/studyhub/node_modules/@formkit"],
+      "enabled": true
+    },
+    "web-search": {
+      "type": "local",
+      "command": ["npx", "-y", "@zhafron/mcp-web-search"],
+      "enabled": true
+    },
+    "npm-search": {
+      "type": "local",
+      "command": ["npx", "-y", "npm-search-mcp-server"],
+      "enabled": true
     }
   }
 }
